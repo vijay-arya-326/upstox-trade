@@ -1,0 +1,6 @@
+.idea/
+.jbeval/
+.venv/
+**/*.env
+NSE.json
+NSE.pkl
