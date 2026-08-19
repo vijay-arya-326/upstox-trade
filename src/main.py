@@ -24,9 +24,10 @@ from bootstrap.pre_load_check import check_pre_env
 from helper_func.download_assets import download_nse_file
 from helper_func.fancy_print import fancy_print
 from helper_func.config import APPNAME
-
+from helper_func.manage_login import check_user_auth
 
 if __name__ == "__main__":
     fancy_print(APPNAME, border_color="green")
     check_pre_env()
     download_nse_file()
+    check_user_auth()
