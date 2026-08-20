@@ -4,7 +4,7 @@ from helper_func.config import  (
     UPSTOX_CLIENT_SECRET,
     UPSTOX_REDIRECT_URI,
 )
-from helper_func.upstox_requests import login
+from helper_func.upstox_requests import login, sandbox_token_active
 from pathlib import Path
 
 def check_user_auth(env_path: Path) -> None:
@@ -15,6 +15,9 @@ def check_user_auth(env_path: Path) -> None:
             forced_prod=False,
            env_path = env_path)
     pass
+
+def validate_sandbox_token():
+    sandbox_token_active()
 
 
 def relogin() -> None:

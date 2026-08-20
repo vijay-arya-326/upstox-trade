@@ -17,7 +17,9 @@ def check_env_variables():
         "UPSTOX_HF_API_URL",
         "UPSTOX_ACCESS_TOKEN",
         "UPSTOX_EXTENDED_TOKEN",
-        "UPSTOX_ACCESS_TOKEN_SANDBOX"
+        "UPSTOX_CLIENT_ID",
+        "UPSTOX_CLIENT_SECRET",
+        "SANDBOX_ACCESS_TOKEN",
     ]
 
     optional_variables = [

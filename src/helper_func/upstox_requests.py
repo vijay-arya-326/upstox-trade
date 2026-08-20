@@ -1,8 +1,10 @@
+import sys
+from warnings import catch_warnings
 
-from helper_func.config import (SANDBOX_UPSTOX_URL,LOADED_ENV, UPSTOX_URL)
+from helper_func.config import (SANDBOX_UPSTOX_URL,LOADED_ENV, UPSTOX_URL, SANDBOX_ACCESS_TOKEN)
 from requests import get, post
 from requests.exceptions import HTTPError
-from helper_func.constants import LOGIN_URL, AUTH_DIALOG_URL, GET_TOKEN_URL
+from helper_func.constants import LOGIN_URL, AUTH_DIALOG_URL, GET_TOKEN_URL, PLACE_ORDER_URL
 import webbrowser
 from urllib.parse import parse_qs, quote, urlparse
 from helper_func.fancy_print import fancy_print, print_json
@@ -13,6 +15,30 @@ import json
 import os
 import re
 from pathlib import Path
+
+def sandbox_token_active():
+    url = SANDBOX_UPSTOX_URL if LOADED_ENV.upper() == "DEMO" else UPSTOX_URL
+    final_url = url+ PLACE_ORDER_URL
+
+    headers = {
+        'accept': 'application/json',
+        'Authorization': f"Bearer {SANDBOX_ACCESS_TOKEN}",
+    }
+    try:
+        profile_response = post(final_url, headers=headers)
+        profile_response.raise_for_status()
+        print(profile_response.json())
+    except HTTPError as http_err:
+        if profile_response.status_code == 401:
+           fancy_print("SANDBOX TOKEN EXPIRED!!! GENERATE NEW TOKEN AND PASTE IN ENV FILE", border_color="red")
+           sys.exit(1)
+        else:
+            fancy_print(f"VALID SANDBOX TOKEN", border_color="blue")
+
+    except Exception as e:
+        print("FROM HEREE---2")
+        fancy_print(str(e) + final_url, border_color="red")
+        print_json(data=headers)
 
 def login(client_id:str, client_secret:str, redirect_url: str, env_path: Path, forced_prod=True):
     url = UPSTOX_URL

@@ -12,7 +12,7 @@ args = parser.parse_args()
 
 env_file_name = "sandbox.env"
 #LOAD ENV Based on passed arguments
-if args.env == "prod":
+if args.env.lower() == "prod":
     env_file_name="prod.env"
 
 env_file_path = Path(__file__).parent.joinpath("env", env_file_name).resolve()
@@ -27,10 +27,12 @@ from helper_func.config import APPNAME
 
 from helper_func.download_assets import download_nse_file
 from helper_func.fancy_print import fancy_print
-from helper_func.manage_login import check_user_auth
+from helper_func.manage_login import check_user_auth, validate_sandbox_token
 
 if __name__ == "__main__":
     fancy_print(APPNAME, border_color="green")
     check_pre_env()
     download_nse_file()
-    check_user_auth(env_path = env_file_path)
+    # check_user_auth(env_path = env_file_path)
+    if args.env.lower() == "demo":
+        validate_sandbox_token()
