@@ -33,4 +33,4 @@ if __name__ == "__main__":
     fancy_print(APPNAME, border_color="green")
     check_pre_env()
     download_nse_file()
-    check_user_auth()
+    check_user_auth(env_path = env_file_path)
