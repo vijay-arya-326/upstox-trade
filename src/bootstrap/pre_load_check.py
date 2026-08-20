@@ -12,6 +12,9 @@ def check_env_variables():
         "APPNAME",
         "INSTRUMENT_FILE",
         "INSTRUMENT_FILE_PICKEL",
+        "SANDBOX_UPSTOX_URL",
+        "UPSTOX_URL",
+        "UPSTOX_HF_API_URL",
     ]
 
     optional_variables = [
