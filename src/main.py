@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 from dotenv import load_dotenv
 from bootstrap.pre_load_check import check_pre_env
+import sys
 
 # 1. Initialize the parser
 parser = argparse.ArgumentParser(description="A script process UPSTOX orders. Pass env PROD|DEMO")
@@ -23,7 +24,7 @@ else:
     exit(f"Env file not found. Create a file at {env_file_path}")
 
 
-from helper_func.config import APPNAME
+from helper_func.config import APPNAME, LOADED_ENV
 
 from helper_func.download_assets import download_nse_file
 from helper_func.fancy_print import fancy_print
@@ -33,6 +34,7 @@ if __name__ == "__main__":
     fancy_print(APPNAME, border_color="green")
     check_pre_env()
     download_nse_file()
-    # check_user_auth(env_path = env_file_path)
-    if args.env.lower() == "demo":
-        validate_sandbox_token()
+    check_user_auth(env_path = env_file_path)
+    if LOADED_ENV.upper() == "DEMO":
+        if not  validate_sandbox_token():
+            sys.exit(1)

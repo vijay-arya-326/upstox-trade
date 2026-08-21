@@ -1,7 +1,8 @@
 import sys
 from warnings import catch_warnings
 
-from helper_func.config import (SANDBOX_UPSTOX_URL,LOADED_ENV, UPSTOX_URL, SANDBOX_ACCESS_TOKEN)
+from helper_func.config import (SANDBOX_UPSTOX_URL, LOADED_ENV,
+    UPSTOX_URL, SANDBOX_ACCESS_TOKEN, UPSTOX_ACCESS_TOKEN)
 from requests import get, post
 from requests.exceptions import HTTPError
 from helper_func.constants import LOGIN_URL, AUTH_DIALOG_URL, GET_TOKEN_URL, PLACE_ORDER_URL
@@ -16,29 +17,38 @@ import os
 import re
 from pathlib import Path
 
-def sandbox_token_active():
-    url = SANDBOX_UPSTOX_URL if LOADED_ENV.upper() == "DEMO" else UPSTOX_URL
-    final_url = url+ PLACE_ORDER_URL
+def sandbox_token_active(forceProd:bool = False):
+    if forceProd:
+        url = UPSTOX_URL
+        selected_token =  UPSTOX_ACCESS_TOKEN
+        selected_env = "LIVE"
+    else:
+        url = SANDBOX_UPSTOX_URL
+        selected_token = SANDBOX_ACCESS_TOKEN
+        selected_env = "SANDBOX"
 
+    final_url = url+ PLACE_ORDER_URL
     headers = {
         'accept': 'application/json',
-        'Authorization': f"Bearer {SANDBOX_ACCESS_TOKEN}",
+        'Authorization': f"Bearer {selected_token}",
     }
     try:
         profile_response = post(final_url, headers=headers)
         profile_response.raise_for_status()
         print(profile_response.json())
+        return True
     except HTTPError as http_err:
         if profile_response.status_code == 401:
-           fancy_print("SANDBOX TOKEN EXPIRED!!! GENERATE NEW TOKEN AND PASTE IN ENV FILE", border_color="red")
-           sys.exit(1)
+           fancy_print(f"{selected_env} TOKEN EXPIRED!!! GENERATE NEW TOKEN AND PASTE IN ENV FILE", border_color="red")
         else:
-            fancy_print(f"VALID SANDBOX TOKEN", border_color="blue")
-
+            fancy_print(f"VALID {selected_env} TOKEN", border_color="blue")
+            return True
+        return False
     except Exception as e:
         print("FROM HEREE---2")
         fancy_print(str(e) + final_url, border_color="red")
         print_json(data=headers)
+        return False
 
 def login(client_id:str, client_secret:str, redirect_url: str, env_path: Path, forced_prod=True):
     url = UPSTOX_URL
