@@ -45,7 +45,6 @@ def sandbox_token_active(forceProd:bool = False):
             return True
         return False
     except Exception as e:
-        print("FROM HEREE---2")
         fancy_print(str(e) + final_url, border_color="red")
         print_json(data=headers)
         return False

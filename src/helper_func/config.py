@@ -22,6 +22,12 @@ UPSTOX_REDIRECT_URI = os.getenv("UPSTOX_REDIRECT_URI")
 
 UPSTOX_ACCESS_TOKEN = os.getenv("UPSTOX_ACCESS_TOKEN")
 
+ORDER_RETRY_COUNT = 3
 
+# Setting up envPath
+if LOADED_ENV == "DEMO":
+    ENV_PATH =  assets_path.joinpath("env").joinpath("sandbox.env")
+else:
+    ENV_PATH = assets_path.joinpath("env").joinpath("prod.env")
 
 
