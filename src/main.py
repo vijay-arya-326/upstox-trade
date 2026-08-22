@@ -8,7 +8,7 @@ from helper_func.manage_login import check_user_auth, validate_sandbox_token
 if __name__ == "__main__":
     fancy_print(APPNAME, border_color="green")
     download_nse_file()
-    # check_user_auth(env_path = ENV_PATH)
+    check_user_auth()
     if LOADED_ENV.upper() == "DEMO":
         if not  validate_sandbox_token():
             sys.exit(1)

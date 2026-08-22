@@ -28,7 +28,7 @@ ENV_PATH = env_file_path
 APPNAME = os.getenv("APPNAME")
 assets_path = Path(__file__).parent.parent
 instrument_file = assets_path.joinpath(os.getenv("INSTRUMENT_FILE"))
-instrument_pickle_file = assets_path.joinpath(os.getenv("INSTRUMENT_FILE_PICKEL"))
+instrument_pickle_file = assets_path.joinpath(os.getenv("INSTRUMENT_FILE_PICKLE"))
 
 SANDBOX_UPSTOX_URL = os.getenv("SANDBOX_UPSTOX_URL")
 UPSTOX_URL = os.getenv("UPSTOX_URL")

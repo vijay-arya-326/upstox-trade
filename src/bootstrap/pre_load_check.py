@@ -10,8 +10,9 @@ def check_env_variables():
 
     mandatory_variables = [
         "APPNAME",
+        "LOADED_ENV",
         "INSTRUMENT_FILE",
-        "INSTRUMENT_FILE_PICKEL",
+        "INSTRUMENT_FILE_PICKLE",
         "SANDBOX_UPSTOX_URL",
         "UPSTOX_URL",
         "UPSTOX_HF_API_URL",

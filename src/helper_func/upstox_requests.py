@@ -2,7 +2,7 @@ import sys
 from warnings import catch_warnings
 
 from helper_func.config import (SANDBOX_UPSTOX_URL, LOADED_ENV,
-    UPSTOX_URL, SANDBOX_ACCESS_TOKEN, UPSTOX_ACCESS_TOKEN)
+    UPSTOX_URL, SANDBOX_ACCESS_TOKEN, UPSTOX_ACCESS_TOKEN, ENV_PATH, UPSTOX_CLIENT_ID, UPSTOX_CLIENT_SECRET, UPSTOX_REDIRECT_URI)
 from requests import get, post
 from requests.exceptions import HTTPError
 from helper_func.constants import LOGIN_URL, AUTH_DIALOG_URL, GET_TOKEN_URL, PLACE_ORDER_URL
@@ -49,7 +49,12 @@ def sandbox_token_active(forceProd:bool = False):
         print_json(data=headers)
         return False
 
-def login(client_id:str, client_secret:str, redirect_url: str, env_path: Path, forced_prod=True):
+def login():
+    client_id:str = UPSTOX_CLIENT_ID
+    client_secret: str = UPSTOX_CLIENT_SECRET
+    redirect_url: str = UPSTOX_REDIRECT_URI
+    env_path: Path = ENV_PATH
+
     url = UPSTOX_URL
     get_token_url = url+GET_TOKEN_URL
     auth_url = (
@@ -124,7 +129,7 @@ def _capture_authorization_code(redirect_uri: str, timeout: int = 180) -> str:
             return
 
     fancy_print(
-        f"Listening for OAuth callback on http://{bind_address}:{port}{expected_path}",
+        f"Listening for OAuth callback on http://{bind_address}{expected_path}",
         border_color="cyan",
     )
 
