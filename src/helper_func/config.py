@@ -1,6 +1,30 @@
 import os
 from pathlib import Path
+import argparse
+from dotenv import load_dotenv
+from bootstrap.pre_load_check import check_pre_env
 
+#Loading env file
+# 1. Initialize the parser
+parser = argparse.ArgumentParser(description="A script process UPSTOX orders. Pass env PROD|DEMO")
+# 2. Add named arguments
+parser.add_argument("--env", type=str, required=True, help="Demo or Prod env", choices=["prod", "demo"])
+# 3. Parse the arguments
+args = parser.parse_args()
+
+env_file_name = "sandbox.env"
+#LOAD ENV Based on passed arguments
+if args.env.lower() == "prod":
+    env_file_name="prod.env"
+
+env_file_path = Path(__file__).parent.parent.joinpath("env", env_file_name).resolve()
+if env_file_path.exists():
+    load_dotenv(dotenv_path=env_file_path, override=True)
+    check_pre_env()
+else:
+    exit(f"Env file not found. Create a file at {env_file_path}")
+
+ENV_PATH = env_file_path
 APPNAME = os.getenv("APPNAME")
 assets_path = Path(__file__).parent.parent
 instrument_file = assets_path.joinpath(os.getenv("INSTRUMENT_FILE"))
@@ -24,10 +48,5 @@ UPSTOX_ACCESS_TOKEN = os.getenv("UPSTOX_ACCESS_TOKEN")
 
 ORDER_RETRY_COUNT = 3
 
-# Setting up envPath
-if LOADED_ENV == "DEMO":
-    ENV_PATH =  assets_path.joinpath("env").joinpath("sandbox.env")
-else:
-    ENV_PATH = assets_path.joinpath("env").joinpath("prod.env")
 
 
