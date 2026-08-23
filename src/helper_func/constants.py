@@ -4,5 +4,8 @@ GET_TOKEN_URL = "/v2/login/authorization/token"
 PROFILE_URL = "/v2/user/profile"
 PLACE_ORDER_URL ="/v3/order/place"
 CANCEL_ORDER_URL ="/v3/order/cancel"
+MODIFY_ORDER_URL ="/v3/order/modify"
+
+
 
 SANDBOX_ENV_NAME = ["SANDBOX", "DEMO"]

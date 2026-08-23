@@ -163,3 +163,60 @@ class OrderModel(BaseModel):
                 "market_protection": -1,
             }
         }
+
+
+class ModifyOrderModel(BaseModel):
+    """Request body for Upstox 'Modify Order' API (PUT /v3/order/modify)."""
+
+    quantity: Optional[int] = Field(
+        default=None,
+        description="Quantity with which the order was placed",
+    )
+    validity: Validity = Field(
+        ...,
+        description="Order validity. DAY or IOC.",
+    )
+    price: float = Field(
+        ...,
+        description="Price at which the order was placed",
+    )
+    order_id: str = Field(
+        ...,
+        description="The order ID for which the order must be modified",
+    )
+    order_type: OrderType = Field(
+        ...,
+        description="Type of order: MARKET, LIMIT, SL, or SL-M",
+    )
+    disclosed_quantity: Optional[int] = Field(
+        default=None,
+        description="Volume to be displayed in market depth. If provided, must be non-zero.",
+    )
+    trigger_price: float = Field(
+        ...,
+        description="Trigger price for stop loss orders",
+    )
+    market_protection: Optional[int] = Field(
+        default=-1,
+        ge=-1,
+        le=25,
+        description=(
+            "Applicable for MARKET and SL-M orders (ignored for LIMIT/SL). "
+            "-1 = automatic protection (default), 1-25 = custom protection %, "
+            "0 = no protection (order rejected by exchange for MARKET orders via API)."
+        ),
+    )
+
+
+if __name__ == "__main__":
+    # Example matching the docs' sample request
+    example = ModifyOrderRequest(
+        quantity=1,
+        validity=Validity.DAY,
+        price=120.01,
+        order_id="1644490272000",
+        order_type=OrderType.MARKET,
+        disclosed_quantity=0,
+        trigger_price=0,
+    )
+    print(example.model_dump_json(indent=2, exclude_none=True))
