@@ -16,22 +16,23 @@ if __name__ == "__main__":
         if not validate_sandbox_token():
             sys.exit(1)
 
-    # sample_order_obj: OrderModel = {
-    #   "quantity": 65,
-    #   "product": "D",
-    #   "validity": "DAY",
-    #   "price": 0,
-    #   "tag": "entry",
-    #   "instrument_token": INSTRUMENT_KEY,
-    #   "order_type": "MARKET",
-    #   "transaction_type": "BUY",
-    #   "disclosed_quantity": 0,
-    #   "trigger_price": 0.0,
-    #   "is_amo": False,
-    #   "slice": True
-    # }
-    #
-    # place_order(sample_order_obj)
+    sample_order_obj: OrderModel = {
+      "quantity": 65,
+      "product": "D",
+      "validity": "DAY",
+      "price": 0,
+      "tag": "entry",
+      "instrument_token": INSTRUMENT_KEY,
+      "order_type": "MARKET",
+      "transaction_type": "BUY",
+      "disclosed_quantity": 0,
+      "trigger_price": 0.0,
+      "is_amo": False,
+      "slice": True
+    }
+
+    order_ids  = place_order(sample_order_obj)
 
     # get_order_detail(order_id=260823101630173)
-    cancel_order(order_id=260823140026208)
+    for id in order_ids:
+        cancel_order(order_id=id)
