@@ -1,29 +1,29 @@
-from pygments.lexers import data
-
 from DTO.order_model import OrderModel
-from helper_func.constants import PLACE_ORDER_URL, SANDBOX_ENV_NAME
+from helper_func.constants import PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL
 from helper_func.config import (LOADED_ENV, UPSTOX_URL, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ACCESS_TOKEN,
  SANDBOX_ACCESS_TOKEN, ORDER_RETRY_COUNT)
-from requests import post, get
+from requests import post, get, delete
 from requests.exceptions import HTTPError
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.upstox_requests import login
 
+if LOADED_ENV in SANDBOX_ENV_NAME:
+    url = SANDBOX_UPSTOX_URL
+    token = SANDBOX_ACCESS_TOKEN
+else:
+    url = UPSTOX_HF_API_URL
+    token = ACCESS_TOKEN
+
+
+headers = {
+    "Accept": "application/json",
+    "Authorization": f"Bearer {token}",
+}
+
+
 def place_order(order_obj: OrderModel, retry_count:int= 0):
-    if LOADED_ENV in SANDBOX_ENV_NAME:
-        url = SANDBOX_UPSTOX_URL
-        token = SANDBOX_ACCESS_TOKEN
-    else:
-        url = UPSTOX_HF_API_URL
-        token = ACCESS_TOKEN
-
-    final_url =  url+PLACE_ORDER_URL
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {token}",
-    }
-
     try:
+        final_url = url + PLACE_ORDER_URL
         book_order = post(url=final_url, headers=headers, json=order_obj)
         book_order.raise_for_status()
         print(book_order.json())
@@ -51,8 +51,35 @@ def place_order(order_obj: OrderModel, retry_count:int= 0):
 def modify_order():
     pass
 
-def close_order():
-    pass
+def cancel_order(order_id :int):
+    print("cancel order called")
+    try:
+        final_url = f"{url}{CANCEL_ORDER_URL}?order_id={order_id}"
+        api_response = delete(url=final_url, headers=headers)
+        print(api_response.json())
+    except HTTPError as http_err:
+        if api_response.status_code == 401:
+            login()
+            cancel_order(order_id)
+    except Exception as err:
+        fancy_print(str(err), border_color="red")
+        print_json(data=headers)
+        return False
+
 
 def list_order():
     pass
+
+def get_order_detail(order_id: int ):
+    try:
+        final_url =  url + PLACE_ORDER_URL + str(order_id)
+
+        pass
+    except HTTPError as http_err:
+        login()
+        if ORDER_RETRY_COUNT <= ORDER_RETRY_COUNT:
+            pass
+    except Exception as err:
+        fancy_print(str(err), border_color="red")
+        print_json(data=headers)
+        return False
