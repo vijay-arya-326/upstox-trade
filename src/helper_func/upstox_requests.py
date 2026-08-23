@@ -33,13 +33,14 @@ def sandbox_token_active(forceProd:bool = False):
         'Authorization': f"Bearer {selected_token}",
     }
     try:
+        # print(final_url)
         profile_response = post(final_url, headers=headers)
         profile_response.raise_for_status()
         print(profile_response.json())
         return True
     except HTTPError as http_err:
         if profile_response.status_code == 401:
-           fancy_print(f"{selected_env} TOKEN EXPIRED!!! GENERATE NEW TOKEN AND PASTE IN ENV FILE", border_color="red")
+           fancy_print(f"{selected_env} TOKEN EXPIRED!!! GENERATE NEW TOKEN AND PASTE IN ENV FILE", border_color="red3", title="HTTP Error")
         else:
             fancy_print(f"VALID {selected_env} TOKEN", border_color="blue")
             return True
@@ -129,7 +130,7 @@ def _capture_authorization_code(redirect_uri: str, timeout: int = 180) -> str:
             return
 
     fancy_print(
-        f"Listening for OAuth callback on http://{bind_address}{expected_path}",
+        f"Listening for OAuth callback on http://{bind_address}:{port}{expected_path}",
         border_color="cyan",
     )
 

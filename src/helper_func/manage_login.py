@@ -12,11 +12,8 @@ def check_user_auth() -> None:
     if active_token == False :
         #If invalid token, attempting relogin
         login()
-    pass
+
 
 def validate_sandbox_token():
-    sandbox_token_active()
+    return sandbox_token_active()
 
-
-def relogin() -> None:
-    pass

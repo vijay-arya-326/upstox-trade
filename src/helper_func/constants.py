@@ -3,3 +3,7 @@ AUTH_DIALOG_URL= "/v2/login/authorization/dialog"
 GET_TOKEN_URL = "/v2/login/authorization/token"
 PROFILE_URL = "/v2/user/profile"
 PLACE_ORDER_URL ="/v3/order/place"
+
+
+
+SANDBOX_ENV_NAME = ["SANDBOX", "DEMO"]

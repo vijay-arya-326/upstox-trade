@@ -21,6 +21,12 @@ def check_env_variables():
         "UPSTOX_CLIENT_ID",
         "UPSTOX_CLIENT_SECRET",
         "SANDBOX_ACCESS_TOKEN",
+        "SEGMENT",
+        "SEGMENT_OF_INDEX",
+        "UNDERLYING_SYMBOL",
+        "UNDERLYING_SYMBOL_OF_INDEX",
+        "EXPIRY_DATE",
+        "LOTS",
     ]
 
     optional_variables = [
