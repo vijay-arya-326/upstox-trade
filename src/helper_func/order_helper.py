@@ -61,7 +61,6 @@ def close_order(order_id: int):
     pass
 
 def cancel_order(order_id :int):
-    print("cancel order called")
     try:
         final_url = f"{url}{CANCEL_ORDER_URL}?order_id={order_id}"
         api_response = delete(url=final_url, headers=headers)
