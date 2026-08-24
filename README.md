@@ -88,103 +88,10 @@ Mandatory keys checked at load time (`src/bootstrap/pre_load_check.py`):
 | `UNDERLYING_SYMBOL`, `UNDERLYING_SYMBOL_OF_INDEX` | Underlying identifiers |
 | `EXPIRY_DATE` | Contract expiry `YYYY-MM-DD` (must not be in the past) |
 | `LOTS` | Lot size used when sizing orders |
-| `DB_PATH` | SQLite file relative to `src/`, e.g. `db/data/trader_database.db` |
 
 `src/env/.env.example` is a starting template; add any keys listed above that are not in the example.
 
-## Local SQLite
-
-Orders and P&amp;L are stored in a local SQLite file. The path comes from `DB_PATH` in the env file; `src/helper_func/config.py` resolves it to `DB_PATH_FULL` under `src/`. The `.db` file and SQLite WAL sidecars (`*.db-wal`, `*.db-shm`) are gitignored.
-
-Helpers live in [`src/db/helper/db_connector.py`](src/db/helper/db_connector.py). Importing them loads config, so **`--env=demo` or `--env=prod` is required**, and you must run from `src/` (same as `main.py`).
-
-### Check the connection
-
-```bash
-cd src
-uv run python -c "from db.helper.db_connector import ping_db; ping_db()" --env=demo
-```
-
-`ping_db()` opens a session, runs `SELECT 1`, prints the file path on success, and returns `True` / `False`.
-
-If you previously created `db/data/trader_database.db` as a **directory** (an empty folder with that name), SQLite cannot open it. Remove the folder, then ping again so the connector can create a real database file.
-
-### Open a connection
-
-Use `get_connection()` when you need to keep the connection across several steps (and close it yourself):
-
-```python
-from db.helper.db_connector import get_connection
-
-conn = get_connection()
-try:
-    conn.execute("SELECT 1")
-finally:
-    conn.close()
-```
-
-The connection uses `sqlite3.Row` (access columns by name), `PRAGMA foreign_keys = ON`, and WAL journal mode. Parent directories of `DB_PATH` are created if they are missing.
-
-### Insert and update (preferred: `db_session`)
-
-`db_session()` opens a connection, **commits** if the block succeeds, **rolls back** if it raises, then **closes** the connection. Always pass values with `?` placeholders.
-
-```python
-from db.helper.db_connector import db_session
-
-with db_session() as conn:
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS trades (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            status TEXT NOT NULL,
-            instrument_token TEXT NOT NULL,
-            net_pnl REAL
-        )
-        """
-    )
-    conn.execute(
-        "INSERT INTO trades (status, instrument_token, net_pnl) VALUES (?, ?, ?)",
-        ("open", "NSE_FO|61703", None),
-    )
-    trade_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-    conn.execute(
-        "UPDATE trades SET status = ?, net_pnl = ? WHERE id = ?",
-        ("closed", 1250.50, trade_id),
-    )
-```
-
-Read rows the same way:
-
-```python
-with db_session() as conn:
-    row = conn.execute(
-        "SELECT id, status, net_pnl FROM trades WHERE id = ?",
-        (trade_id,),
-    ).fetchone()
-    print(row["status"], row["net_pnl"])
-```
-
-Pass an explicit path only if you need a file other than `DB_PATH`:
-
-```python
-from pathlib import Path
-from db.helper.db_connector import get_connection
-
-conn = get_connection(Path("/tmp/scratch.db"))
-```
-
-Inspect the file in a shell:
-
-```bash
-sqlite3 src/db/data/trader_database.db
-```
-
-```sql
-.tables
-SELECT * FROM trades;
-.quit
-```
+Local SQLite (`DB_PATH`, connection helpers, insert/update) is documented in [`db_readme.md`](db_readme.md).
 
 ## Project layout
 
@@ -192,13 +99,13 @@ SELECT * FROM trades;
 upstox-trade/
 ├── pyproject.toml          # Project metadata and uv dependencies
 ├── uv.lock                 # Locked dependency versions
+├── db_readme.md            # Local SQLite usage
 ├── src/
 │   ├── main.py             # Entry point
 │   ├── bootstrap/          # Startup env validation
 │   ├── DTO/                # Order request models
 │   ├── env/                # sandbox.env / prod.env (not committed)
 │   ├── assets/             # Downloaded NSE.json / NSE.pkl
-│   ├── db/                 # SQLite connector and local data file
 │   └── helper_func/        # Config, auth, HTTP, printing
 ```
 
@@ -208,7 +115,8 @@ upstox-trade/
 | --- | --- |
 | [`pyproject.toml`](pyproject.toml) | Package name, Python `>=3.12`, dependencies: `dotenv`, `pydantic`, `requests`, `rich`. |
 | [`uv.lock`](uv.lock) | Exact versions installed by `uv sync`. |
-| [`.gitignore`](.gitignore) | Ignores `.venv`, `**/*.env`, generated `NSE.json` / `NSE.pkl`, and SQLite `*.db` / WAL files. |
+| [`.gitignore`](.gitignore) | Ignores `.venv`, `**/*.env`, and generated `NSE.json` / `NSE.pkl`. |
+| [`db_readme.md`](db_readme.md) | Local SQLite path, connection helpers, and insert/update usage. |
 
 ### Entry and bootstrap
 
@@ -221,7 +129,7 @@ upstox-trade/
 
 | File | Function |
 | --- | --- |
-| [`src/helper_func/config.py`](src/helper_func/config.py) | Parses `--env`, loads `sandbox.env` or `prod.env`, runs pre-load checks, exposes API URLs, tokens, instrument paths, and `DB_PATH_FULL`. |
+| [`src/helper_func/config.py`](src/helper_func/config.py) | Parses `--env`, loads `sandbox.env` or `prod.env`, runs pre-load checks, exposes API URLs, tokens, and instrument paths. |
 | [`src/helper_func/constants.py`](src/helper_func/constants.py) | Upstox path suffixes (login, token, place/modify/cancel order) and sandbox env name aliases. |
 | [`src/helper_func/fancy_print.py`](src/helper_func/fancy_print.py) | Rich panels for info / warning / error messages. |
 
@@ -232,13 +140,6 @@ upstox-trade/
 | [`src/helper_func/manage_login.py`](src/helper_func/manage_login.py) | `check_user_auth()` probes the live token and calls `login()` if needed; `validate_sandbox_token()` probes the sandbox token. |
 | [`src/helper_func/upstox_requests.py`](src/helper_func/upstox_requests.py) | Token probe via place-order endpoint; OAuth browser login; local HTTP callback on the redirect URI (rejects ports &lt; 1024); writes live tokens back into the env file. |
 | [`src/helper_func/download_assets.py`](src/helper_func/download_assets.py) | Downloads gzipped NSE instrument master from Upstox assets once per day, writes JSON, rebuilds the pickle cache. |
-
-### Database
-
-| File | Function |
-| --- | --- |
-| [`src/db/helper/db_connector.py`](src/db/helper/db_connector.py) | SQLite helpers: `get_connection()`, `db_session()`, `ping_db()`. File path from `DB_PATH`. |
-| `src/db/data/trader_database.db` | Local database file (created on first connect, not committed). |
 
 ### Orders
 
