@@ -125,8 +125,8 @@ def list_order():
 
 def get_order_detail(order_id: int ):
     try:
-        final_url =  url + PLACE_ORDER_URL + str(order_id)
-
+        final_url =  prepare_url() + PLACE_ORDER_URL + str(order_id)
+        headers = prepare_headers()
         pass
     except HTTPError as http_err:
         login()
