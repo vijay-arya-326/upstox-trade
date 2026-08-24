@@ -5,6 +5,7 @@ PROFILE_URL = "/v2/user/profile"
 PLACE_ORDER_URL ="/v3/order/place"
 CANCEL_ORDER_URL ="/v3/order/cancel"
 MODIFY_ORDER_URL ="/v3/order/modify"
+CALCULATE_BROKERAGE_URL= "/v2/charges/brokerage"
 
 
 
