@@ -4,3 +4,4 @@
 **/*.env
 NSE.json
 NSE.pkl
+__pycache__/
