@@ -27,6 +27,7 @@ def check_env_variables():
         "UNDERLYING_SYMBOL_OF_INDEX",
         "EXPIRY_DATE",
         "LOTS",
+        "DB_PATH",
     ]
 
     optional_variables = [

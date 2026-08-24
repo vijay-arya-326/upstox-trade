@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 from dotenv import load_dotenv
 from bootstrap.pre_load_check import check_pre_env
+import sys
 
 #Loading env file
 # 1. Initialize the parser
@@ -23,6 +24,8 @@ if env_file_path.exists():
     check_pre_env()
 else:
     exit(f"Env file not found. Create a file at {env_file_path}")
+
+#################
 
 ENV_PATH = env_file_path
 APPNAME = os.getenv("APPNAME")
@@ -57,5 +60,8 @@ EXPIRY_DATE = os.getenv("EXPIRY_DATE")
 # INSTRUMENT_KEY =  f"{SEGMENT_OF_INDEX}|{UNDERLYING_SYMBOL_OF_INDEX}"
 INSTRUMENT_KEY =  "NSE_FO|61703"
 
+DB_PATH_FULL = Path(__file__).parent.parent.joinpath(os.getenv("DB_PATH"))
 
-
+if not DB_PATH_FULL.exists():
+    DB_PATH_FULL.mkdir(parents=True, exist_ok=True)
+    print(f"Database path created at {DB_PATH_FULL}")
