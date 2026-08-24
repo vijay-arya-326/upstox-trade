@@ -38,3 +38,15 @@ def calculate_brokerage(order_obj):
       fancy_print(str(err), border_color="red", title="Unable to fetch charges - Unknown Error")
       print_json(data=str(api_response.json()), indent=2)
       return False
+
+
+def calculate_tax(taxable_profit):
+    try:
+        taxable_profit = float(taxable_profit)
+        total_tax_payable = (taxable_profit * 0.30) * 1.04
+        border_color = "green" if total_tax_payable >= 0 else "yellow"
+        fancy_print(msg=str(total_tax_payable), border_color=border_color, title="Tax Calculation")
+        return total_tax_payable
+    except Exception as err:
+        fancy_print(str(err), border_color="red", title="Unable to calculate tax - Unknown Error")
+        return False
