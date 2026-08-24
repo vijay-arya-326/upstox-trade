@@ -53,13 +53,13 @@ def place_order(order_obj: OrderModel, retry_count:int= 0,):
     except HTTPError as http_err:
         if book_order.status_code == 401:
             # TODO: attemp relogin and recall function
-            login()
+            if login():
             # try login for upstox request after login
-            if retry_count <= ORDER_RETRY_COUNT:
-                place_order(order_obj, retry_count + 1)
-            else:
-                fancy_print("All retry failed", border_color="red", title="Order placed Failed - Http Error")
-                return False
+                if retry_count <= ORDER_RETRY_COUNT:
+                    place_order(order_obj, retry_count + 1)
+                else:
+                    fancy_print("All retry failed", border_color="red", title="Order placed Failed - Http Error")
+                    return False
         else:
             fancy_print(str(http_err), border_color="red", title="Order placed Failed - Unknown Error")
             print_json(data=order_obj, indent=2)

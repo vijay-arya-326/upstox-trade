@@ -84,12 +84,13 @@ def login():
         # print(get_token_from_code.status_code)
         response  = get_token_from_code.json()
         set_token_in_env(response['access_token'], response['extended_token'], env_path)
-
+        return True
     except HTTPError as http_err:
         fancy_print(f"HTTP error occurred: {http_err}", border_color="red")
         print_json(data= get_token_from_code.json(), indent=2)
     except Exception as e:
         fancy_print(e, border_color="red")
+    return False
 
 
 
