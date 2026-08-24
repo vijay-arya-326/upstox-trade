@@ -3,7 +3,6 @@ from pathlib import Path
 import argparse
 from dotenv import load_dotenv
 from bootstrap.pre_load_check import check_pre_env
-import sys
 
 #Loading env file
 # 1. Initialize the parser
