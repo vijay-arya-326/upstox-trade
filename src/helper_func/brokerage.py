@@ -43,11 +43,9 @@ def calculate_brokerage(order_obj):
 def calculate_tax(taxable_profit):
     try:
         taxable_profit = float(taxable_profit)
-        if taxable_profit <= 0:
-            fancy_print("No tax payable on zero or negative profit", border_color="yellow", title="Tax Calculation")
-            return 0
         total_tax_payable = (taxable_profit * 0.30) * 1.04
-        fancy_print(msg=str(total_tax_payable), border_color="green", title="Tax Calculation")
+        border_color = "green" if total_tax_payable >= 0 else "yellow"
+        fancy_print(msg=str(total_tax_payable), border_color=border_color, title="Tax Calculation")
         return total_tax_payable
     except Exception as err:
         fancy_print(str(err), border_color="red", title="Unable to calculate tax - Unknown Error")
