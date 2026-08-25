@@ -25,15 +25,15 @@ if __name__ == "__main__":
         fancy_print(msg="DB Connected", title="DB Connected", border_color="green")
 
 
-    # order_obj_buy = {
-    #     "instrument_token": INSTRUMENT_KEY,
-    #     "product": "D",
-    #     "quantity": 65,
-    #     "transaction_type": "BUY",
-    #     "price": 11000
-    # }
-    #
-    # calculate_brokerage(order_obj= order_obj_buy)
+    order_obj_buy = {
+        "instrument_token": INSTRUMENT_KEY,
+        "product": "D",
+        "quantity": 65,
+        "transaction_type": "BUY",
+        "price": 11000
+    }
+
+    calculate_brokerage(order_obj= order_obj_buy)
     #
     # order_obj_sell = {
     #     "instrument_token": INSTRUMENT_KEY,

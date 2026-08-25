@@ -1,10 +1,12 @@
 import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
-
+from sqlalchemy import Engine
 from helper_func.config import DB_PATH_FULL
 from helper_func.fancy_print import fancy_print
+from sqlmodel import create_engine, Session
 
+_engine = None
 
 def get_connection(db_path: Path | None = None) -> sqlite3.Connection:
     path = Path(db_path) if db_path is not None else DB_PATH_FULL
@@ -46,3 +48,28 @@ def ping_db(db_path: Path | None = None) -> bool:
     except Exception as err:
         fancy_print(str(err), border_color="red", title="SQLite connection failed")
         return False
+
+
+def get_engine():
+    global _engine
+    if _engine is None:
+        _engine = create_engine(
+            f"sqlite:///{DB_PATH_FULL}",
+            connect_args={"check_same_thread": False},
+            echo = True,
+        )
+    return _engine
+
+@contextmanager
+def orm_session(engine=None):
+    """SQLModel/SQLAlchemy ORM session — for use with model classes (e.g. ApiLog)."""
+    engine = engine or get_engine()
+    session = Session(engine)
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

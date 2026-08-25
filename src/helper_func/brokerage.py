@@ -6,9 +6,10 @@ from requests.exceptions import HTTPError
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.constants import CALCULATE_BROKERAGE_URL
 from helper_func.config import UPSTOX_URL, UPSTOX_ACCESS_TOKEN, INSTRUMENT_KEY
+from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
 
-def headers():
+def headers_fun():
     return {
         "Accept": "application/json",
         "Authorization": f"Bearer {UPSTOX_ACCESS_TOKEN}",
@@ -16,14 +17,13 @@ def headers():
 
 def calculate_brokerage(order_obj):
     try:
-
         query_string = ""
         for key, value in order_obj.items():
             query_string += f"{key}={value}&"
 
         final_url = f"{UPSTOX_URL}{CALCULATE_BROKERAGE_URL}?{query_string}"
-
-        api_response  =  requests.get(url=final_url, headers=headers())
+        headers = headers_fun()
+        api_response  =  requests.get(url=final_url, headers=headers)
         if api_response.status_code == 200:
             fancy_print(msg=str(api_response.json()), border_color="green", title="Brokerage Calculation")
     except HTTPError as http_err:
@@ -38,6 +38,8 @@ def calculate_brokerage(order_obj):
       fancy_print(str(err), border_color="red", title="Unable to fetch charges - Unknown Error")
       print_json(data=str(api_response.json()), indent=2)
       return False
+    finally:
+        api_logger(url=final_url, headers= headers, api_response=api_response, payload=order_obj, method="GET")
 
 
 def calculate_tax(taxable_profit):
