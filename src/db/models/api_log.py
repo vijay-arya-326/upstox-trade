@@ -12,6 +12,7 @@ class ApiLog(SQLModel, table=True):
     method: str
     url: str
     headers: str | None = None
+    payload: str | None = None
     response_status: int | None = None
     response: str | None = None
     created_at: datetime
