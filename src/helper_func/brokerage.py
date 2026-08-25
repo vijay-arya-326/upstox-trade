@@ -23,6 +23,7 @@ def calculate_brokerage(order_obj):
 
         final_url = f"{UPSTOX_URL}{CALCULATE_BROKERAGE_URL}?{query_string}"
         headers = headers_fun()
+
         api_response  =  requests.get(url=final_url, headers=headers)
         if api_response.status_code == 200:
             fancy_print(msg=str(api_response.json()), border_color="green", title="Brokerage Calculation")

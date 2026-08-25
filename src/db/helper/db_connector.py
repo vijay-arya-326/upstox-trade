@@ -56,7 +56,7 @@ def get_engine():
         _engine = create_engine(
             f"sqlite:///{DB_PATH_FULL}",
             connect_args={"check_same_thread": False},
-            echo = True,
+            echo = False,
         )
     return _engine
 
