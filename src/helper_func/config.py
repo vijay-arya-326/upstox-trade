@@ -62,5 +62,7 @@ INSTRUMENT_KEY =  "NSE_FO|61703"
 DB_PATH_FULL = Path(__file__).parent.parent.joinpath(os.getenv("DB_PATH"))
 
 if not DB_PATH_FULL.exists():
-    DB_PATH_FULL.mkdir(parents=True, exist_ok=True)
+    DB_PATH_FULL.parent.mkdir(parents=True, exist_ok=True)
+    DB_PATH_FULL.touch(exist_ok=True)
     print(f"Database path created at {DB_PATH_FULL}")
+
