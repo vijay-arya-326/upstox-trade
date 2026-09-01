@@ -32,8 +32,24 @@ if __name__ == "__main__":
         "transaction_type": "BUY",
         "price": 11000
     }
-
     calculate_brokerage(order_obj= order_obj_buy)
+
+    sample_order_obj: OrderModel = {
+        "quantity": 6500 * 4,
+        "product": "D",
+        "validity": "DAY",
+        "price": 0,
+        "tag": "entry",
+        "instrument_token": INSTRUMENT_KEY,
+        "order_type": "MARKET",
+        "transaction_type": "BUY",
+        "disclosed_quantity": 0,
+        "trigger_price": 0.0,
+        "is_amo": False,
+        "slice": True
+    }
+
+    place_order(sample_order_obj)
     #
     # order_obj_sell = {
     #     "instrument_token": INSTRUMENT_KEY,

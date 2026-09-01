@@ -1,15 +1,18 @@
 import json
-from calendar import day_name
-from math import modf
 
 from DTO.order_model import OrderModel, ModifyOrderModel
+from db.helper.db_connector import orm_session
+from db.models import OrderDetail
 from helper_func.constants import PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL
 from helper_func.config import (LOADED_ENV, UPSTOX_URL, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ACCESS_TOKEN,
  SANDBOX_ACCESS_TOKEN, ORDER_RETRY_COUNT)
 from requests import post, get, delete, put
 from requests.exceptions import HTTPError
 from helper_func.fancy_print import fancy_print, print_json
+from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
+from datetime import datetime
+
 
 
 
@@ -48,7 +51,28 @@ def place_order(order_obj: OrderModel, retry_count:int= 0,):
             order_response = book_order.json()
             fancy_print( str(order_response), border_color="green", title="Order placed Successfully")
             # print_json(data=order_response, indent=2)
-            return order_response['data']['order_ids']
+            order_ids = order_response['data']['order_ids']
+
+            order  = OrderDetail(
+                order_id = ", ".join(order_ids),
+                instrument_token=order_obj['instrument_token'],
+                product=order_obj['product'],
+                quantity=order_obj['quantity'],
+                transaction_type=order_obj['transaction_type'],
+                price=order_obj['price'],
+                validity=order_obj['validity'],
+                order_type=order_obj['order_type'],
+                trigger_price=order_obj['trigger_price'],
+                tag=order_obj['tag'],
+                created_at=datetime.now().replace(microsecond=0),
+                updated_at=datetime.now().replace(microsecond=0),
+            )
+
+            with orm_session() as session:
+                session.add(order)
+                session.commit()
+
+            return order_ids
 
     except HTTPError as http_err:
         if book_order.status_code == 401:
@@ -69,6 +93,8 @@ def place_order(order_obj: OrderModel, retry_count:int= 0,):
         fancy_print(str(err) , border_color="red")
         print_json(data=headers)
         return False
+    finally:
+        api_logger(url=final_url, headers= headers, api_response=book_order, payload=order_obj, method="POST")
 
 def modify_order(order_obj:ModifyOrderModel):
     try:
