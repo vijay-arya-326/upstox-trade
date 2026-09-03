@@ -32,10 +32,10 @@ if __name__ == "__main__":
         "transaction_type": "BUY",
         "price": 11000
     }
-    calculate_brokerage(order_obj= order_obj_buy)
+    # calculate_brokerage(order_obj= order_obj_buy)
 
     sample_order_obj: OrderModel = {
-        "quantity": 6500 * 4,
+        "quantity": 6500 * 10,
         "product": "D",
         "validity": "DAY",
         "price": 0,
@@ -60,3 +60,4 @@ if __name__ == "__main__":
     # }
     #
     # calculate_brokerage(order_obj=order_obj_sell)
+    # get_order_detail(order_id=112121)

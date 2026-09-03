@@ -1,3 +1,4 @@
+import os
 from traceback import print_tb
 from typing import Dict
 
@@ -5,15 +6,11 @@ import requests
 from requests.exceptions import HTTPError
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.constants import CALCULATE_BROKERAGE_URL
-from helper_func.config import UPSTOX_URL, UPSTOX_ACCESS_TOKEN, INSTRUMENT_KEY
+from helper_func.config import UPSTOX_URL, UPSTOX_ACCESS_TOKEN, INSTRUMENT_KEY, headers_fun
 from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
 
-def headers_fun():
-    return {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {UPSTOX_ACCESS_TOKEN}",
-    }
+
 
 def calculate_brokerage(order_obj):
     try:
@@ -23,10 +20,15 @@ def calculate_brokerage(order_obj):
 
         final_url = f"{UPSTOX_URL}{CALCULATE_BROKERAGE_URL}?{query_string}"
         headers = headers_fun()
-
         api_response  =  requests.get(url=final_url, headers=headers)
         if api_response.status_code == 200:
-            fancy_print(msg=str(api_response.json()), border_color="green", title="Brokerage Calculation")
+            json_response = api_response.json()
+            fancy_print(msg=str(json_response), border_color="green", title="Brokerage Calculation")
+            return {
+                "success": True,
+                "data": json_response["data"]
+            }
+
     except HTTPError as http_err:
         if api_response.status_code == 401:
             if login():

@@ -3,6 +3,7 @@ from pathlib import Path
 import argparse
 from dotenv import load_dotenv
 from bootstrap.pre_load_check import check_pre_env
+from helper_func.constants import SANDBOX_ENV_NAME
 
 #Loading env file
 # 1. Initialize the parser
@@ -66,3 +67,23 @@ if not DB_PATH_FULL.exists():
     DB_PATH_FULL.touch(exist_ok=True)
     print(f"Database path created at {DB_PATH_FULL}")
 
+def headers_fun():
+    """Return only prod token"""
+    UPSTOX_ACCESS_TOKEN = os.getenv("UPSTOX_ACCESS_TOKEN")
+    return {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {UPSTOX_ACCESS_TOKEN}",
+    }
+
+def prepare_headers():
+    """Return prod or sandbox token, based on selected environment"""
+    if LOADED_ENV in SANDBOX_ENV_NAME:
+        token = os.environ.get('SANDBOX_ACCESS_TOKEN')
+    else:
+        token = os.environ.get('UPSTOX_ACCESS_TOKEN')
+
+    return {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }

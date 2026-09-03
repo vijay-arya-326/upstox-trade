@@ -12,7 +12,9 @@ class OrderDetail(SQLModel, table=True):
     order_id: str = Field(unique=True, index=True)
     placement_batch_id: str | None = None
     instrument_token: str
+    exchange_type: str = Field(max_length=5)
     quantity: int
+    filled_qty: int
     product: str
     validity: str
     price: float
@@ -27,3 +29,4 @@ class OrderDetail(SQLModel, table=True):
     status: str | None = None
     created_at: datetime
     updated_at: datetime
+    total_charges: float

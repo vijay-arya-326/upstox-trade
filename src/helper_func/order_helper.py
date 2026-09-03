@@ -1,44 +1,38 @@
 import json
+import os
 
-from DTO.order_model import OrderModel, ModifyOrderModel
+from DTO.order_model import OrderModel, ModifyOrderModel, OrderDetailModel
 from db.helper.db_connector import orm_session
 from db.models import OrderDetail
-from helper_func.constants import PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL
+from helper_func.constants import (PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL,
+    ORDER_DETAIL_v2)
 from helper_func.config import (LOADED_ENV, UPSTOX_URL, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ACCESS_TOKEN,
- SANDBOX_ACCESS_TOKEN, ORDER_RETRY_COUNT)
+    SANDBOX_ACCESS_TOKEN, ORDER_RETRY_COUNT, prepare_headers)
 from requests import post, get, delete, put
 from requests.exceptions import HTTPError
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
 from datetime import datetime
+from helper_func.brokerage import calculate_brokerage
 
+from sample.response import order_detail_sample_response
 
-
+runSampleOutput = False
 
 def prepare_url(support_hf:bool= False):
+    global runSampleOutput
     if LOADED_ENV in SANDBOX_ENV_NAME:
         url = SANDBOX_UPSTOX_URL
-        token = SANDBOX_ACCESS_TOKEN
+        runSampleOutput = True
     else:
         if support_hf:
             url = UPSTOX_HF_API_URL
         else:
             url = UPSTOX_HF_API_URL
-        token = ACCESS_TOKEN
-
     return url
 
-def prepare_headers():
-    if LOADED_ENV in SANDBOX_ENV_NAME:
-        token = SANDBOX_ACCESS_TOKEN
-    else:
-        token = ACCESS_TOKEN
 
-    return {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {token}",
-    }
 
 
 def place_order(order_obj: OrderModel, retry_count:int= 0,):
@@ -53,26 +47,10 @@ def place_order(order_obj: OrderModel, retry_count:int= 0,):
             # print_json(data=order_response, indent=2)
             order_ids = order_response['data']['order_ids']
 
-            order  = OrderDetail(
-                order_id = ", ".join(order_ids),
-                instrument_token=order_obj['instrument_token'],
-                product=order_obj['product'],
-                quantity=order_obj['quantity'],
-                transaction_type=order_obj['transaction_type'],
-                price=order_obj['price'],
-                validity=order_obj['validity'],
-                order_type=order_obj['order_type'],
-                trigger_price=order_obj['trigger_price'],
-                tag=order_obj['tag'],
-                created_at=datetime.now().replace(microsecond=0),
-                updated_at=datetime.now().replace(microsecond=0),
-            )
+            for order_id in order_ids:
+                get_order_detail(order_id=order_id)
 
-            with orm_session() as session:
-                session.add(order)
-                session.commit()
-
-            return order_ids
+            fancy_print(msg= "Order Place successfully", border_color="green", title="Order Place Successfully")
 
     except HTTPError as http_err:
         if book_order.status_code == 401:
@@ -99,7 +77,6 @@ def place_order(order_obj: OrderModel, retry_count:int= 0,):
 def modify_order(order_obj:ModifyOrderModel):
     try:
         headers = prepare_headers()
-        headers.update({"Content-Type": "application/json"})
         final_url = prepare_url(support_hf=True) + MODIFY_ORDER_URL
         api_response = put(url=final_url, headers=headers, json=order_obj)
         api_response.raise_for_status()
@@ -151,14 +128,55 @@ def list_order():
 
 def get_order_detail(order_id: int ):
     try:
-        final_url =  prepare_url() + PLACE_ORDER_URL + str(order_id)
+        final_url =  prepare_url() + ORDER_DETAIL_v2 + str(order_id)
         headers = prepare_headers()
-        pass
+        api_response = get(url=final_url, headers=headers)
+        if runSampleOutput == True:
+            response =  order_detail_sample_response
+        else:
+            api_response.raise_for_status()
+            response = api_response.json()
+
+        order_response:OrderDetailModel = OrderDetailModel.model_validate(response['data'])
+
+        order = OrderDetail(
+            order_id= order_id,
+            instrument_token=order_response.instrument_token,
+            exchange_type=order_response.exchange,
+            product=order_response.product,
+            quantity=order_response.quantity,
+            filled_qty=order_response.filled_quantity,
+            transaction_type=order_response.transaction_type.value,
+            price= order_response.average_price,
+            validity= order_response.validity,
+            order_type=order_response.order_type.value,
+            trigger_price=order_response.trigger_price,
+            tag=order_response.tag,
+            created_at=datetime.now().replace(microsecond=0),
+            updated_at=datetime.now().replace(microsecond=0),
+        )
+
+        order_obj_buy = {
+            "instrument_token": order_response.instrument_token,
+            "product": order_response.product.value,
+            "quantity": order_response.quantity,
+            "transaction_type": order_response.transaction_type.value,
+            "price": order_response.average_price
+        }
+        charges_on_order = calculate_brokerage(order_obj=order_obj_buy)
+
+        if charges_on_order["success"] == True:
+            order.total_charges=charges_on_order["data"]["charges"]["total"]
+
+        with orm_session() as session:
+            session.add(order)
+            session.commit()
+
+        fancy_print(msg=f"Details for order id :{order_id} updated successfully", border_color="green", title="Order Detail Updated")
+
     except HTTPError as http_err:
-        login()
-        if ORDER_RETRY_COUNT <= ORDER_RETRY_COUNT:
-            pass
+        fancy_print(str(http_err), border_color="red", title="Order canceled Failed -Http Error")
     except Exception as err:
-        fancy_print(str(err), border_color="red")
+        fancy_print(str(err), border_color="red", title="Order Details Failed -- Unknown Error")
         print_json(data=headers)
         return False

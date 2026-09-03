@@ -1,8 +1,8 @@
 import re
 from enum import Enum
 from typing import Optional
-
-from pydantic import BaseModel, Field, field_validator, model_validator
+from datetime import  datetime
+from pydantic import BaseModel, Field, field_validator ,ConfigDict, model_validator
 
 
 # ---------- Enums for constrained string fields ----------
@@ -11,6 +11,12 @@ class ProductType(str, Enum):
     INTRADAY = "I"
     DELIVERY = "D"
     MTF = "MTF"
+
+class Product(str, Enum):
+    D = "D"       # Delivery
+    I = "I"       # Intraday
+    CO = "CO"     # Cover Order
+    MTF = "MTF"   # Margin Trading Facility
 
 
 class Validity(str, Enum):
@@ -29,6 +35,19 @@ class TransactionType(str, Enum):
     BUY = "BUY"
     SELL = "SELL"
 
+class Variety(str, Enum):
+    SIMPLE = "SIMPLE"
+    AMO = "AMO"
+    CO = "CO"
+    OCO = "OCO"
+
+class OrderStatus(str, Enum):
+    COMPLETE = "complete"
+    OPEN = "open"
+    CANCELLED = "cancelled"
+    REJECTED = "rejected"
+    PENDING = "pending"
+    TRIGGER_PENDING = "trigger pending"
 
 # ---------- Main Order model ----------
 
@@ -208,15 +227,47 @@ class ModifyOrderModel(BaseModel):
     )
 
 
-if __name__ == "__main__":
-    # Example matching the docs' sample request
-    example = ModifyOrderRequest(
-        quantity=1,
-        validity=Validity.DAY,
-        price=120.01,
-        order_id="1644490272000",
-        order_type=OrderType.MARKET,
-        disclosed_quantity=0,
-        trigger_price=0,
-    )
-    print(example.model_dump_json(indent=2, exclude_none=True))
+class OrderDetailModel(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    exchange: str
+    product: Product
+    price: float = Field(ge=0)
+    quantity: int = Field(gt=0)
+    status: OrderStatus
+    tag: Optional[str] = None
+
+    instrument_token: str
+    placed_by: str
+
+    trading_symbol: str
+    tradingsymbol: str  # duplicate field in source payload, kept for compatibility
+
+    order_type: OrderType
+    validity: Validity
+
+    trigger_price: float = Field(ge=0)
+    disclosed_quantity: int = Field(ge=0)
+
+    transaction_type: TransactionType
+
+    average_price: float = Field(ge=0)
+    filled_quantity: int = Field(ge=0)
+    pending_quantity: int = Field(ge=0)
+
+    status_message: Optional[str] = None
+    status_message_raw: Optional[str] = None
+
+    exchange_order_id: Optional[str] = None
+    parent_order_id: Optional[str] = None
+    order_id: str
+
+    variety: Variety
+
+    order_timestamp: datetime
+    exchange_timestamp: datetime
+
+    is_amo: bool
+    order_request_id: Optional[str] = None
+    order_ref_id: Optional[str] = None
+
