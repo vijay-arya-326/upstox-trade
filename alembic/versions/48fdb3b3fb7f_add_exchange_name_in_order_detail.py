@@ -1,8 +1,8 @@
-"""create order_details stock_table api_logs
+"""add exchange name in order detail
 
-Revision ID: 5ca050ad2e20
+Revision ID: 48fdb3b3fb7f
 Revises: 
-Create Date: 2026-08-25 12:11:53.175478
+Create Date: 2026-09-01 15:52:48.687467
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5ca050ad2e20'
+revision: str = '48fdb3b3fb7f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,9 +27,10 @@ def upgrade() -> None:
     sa.Column('method', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('url', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('headers', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('payload', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('response_status', sa.Integer(), nullable=True),
     sa.Column('response', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('created_at', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('order_details',
@@ -50,8 +51,8 @@ def upgrade() -> None:
     sa.Column('slice', sa.Boolean(), nullable=False),
     sa.Column('market_protection', sa.Integer(), nullable=True),
     sa.Column('status', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('created_at', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('updated_at', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('order_details', schema=None) as batch_op:
@@ -62,16 +63,20 @@ def upgrade() -> None:
     sa.Column('instrument_key', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('qty_purchased', sa.Integer(), nullable=False),
     sa.Column('avg_purchase_price', sa.Float(), nullable=True),
+    sa.Column('buy_amount', sa.Float(), nullable=False),
     sa.Column('purchase_order_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('bought_on', sa.DateTime(), nullable=True),
     sa.Column('qty_sold', sa.Integer(), nullable=False),
     sa.Column('avg_selling_price', sa.Float(), nullable=True),
+    sa.Column('sell_amount', sa.Float(), nullable=False),
     sa.Column('sell_order_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('sold_on', sa.DateTime(), nullable=True),
     sa.Column('buy_charges', sa.Float(), nullable=False),
     sa.Column('sell_charges', sa.Float(), nullable=False),
     sa.Column('net_profit_before_tax', sa.Float(), nullable=True),
     sa.Column('tax', sa.Float(), nullable=True),
     sa.Column('profit_after_tax', sa.Float(), nullable=True),
-    sa.Column('updated_at', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('stock_table', schema=None) as batch_op:
