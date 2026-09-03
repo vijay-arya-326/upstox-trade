@@ -8,7 +8,7 @@ from sqlmodel import Field, SQLModel
 class OrderDetail(SQLModel, table=True):
     __tablename__ = "order_details"
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True, sa_column_kwargs={"autoincrement": True})
     order_id: str = Field(unique=True, index=True)
     placement_batch_id: str | None = None
     instrument_token: str

@@ -4,17 +4,22 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 from helper_func.common_models import PositionStatus
 
+
 class Position(SQLModel, table=True):
-    __tablename__ =  "positions"
     """A closed (or partially closed) round-trip trade: one buy matched to one sell."""
-    id: Optional[int] = Field(default=None, primary_key=True)
+
+    __tablename__ = "positions"
+
+    id: Optional[int] = Field(
+        default=None, primary_key=True, sa_column_kwargs={"autoincrement": True}
+    )
 
     trading_symbol: str = Field(index=True)
 
-    buy_order_id: int = Field(foreign_key="order.id")
-    sell_order_id: Optional[int] = Field(default=None, foreign_key="order.id")
+    buy_order_id: int = Field(foreign_key="order_details.id")
+    sell_order_id: Optional[int] = Field(default=None, foreign_key="order_details.id")
 
-    quantity: int                      # matched quantity for this pair
+    quantity: int  # matched quantity for this pair
     buy_price: float
     sell_price: Optional[float] = None
 

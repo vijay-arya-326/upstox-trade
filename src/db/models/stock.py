@@ -8,7 +8,7 @@ from sqlmodel import Field, SQLModel
 class Stock(SQLModel, table=True):
     __tablename__ = "stock_table"
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: int | None = Field(default=None, primary_key=True, sa_column_kwargs={"autoincrement": True})
     instrument_key: str = Field(unique=True, index=True)
     qty_purchased: int = 0
     avg_purchase_price: float | None = None
