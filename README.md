@@ -145,7 +145,7 @@ upstox-trade/
 
 | File | Function |
 | --- | --- |
-| [`src/DTO/order_model.py`](src/DTO/order_model.py) | Pydantic models: `OrderModel` (place) and `ModifyOrderModel` (modify), with enums and price/trigger/market-protection rules. |
+| [`src/DTO/order_dto_deprecated.py`](src/DTO/order_dto_deprecated.py) | Pydantic models: `OrderModel` (place) and `ModifyOrderModel` (modify), with enums and price/trigger/market-protection rules. |
 | [`src/helper_func/order_helper.py`](src/helper_func/order_helper.py) | HTTP helpers: `place_order`, `modify_order`, `cancel_order`; picks sandbox vs HFT URL and bearer token from `LOADED_ENV`; retries login on 401. |
 
 ### Env and assets

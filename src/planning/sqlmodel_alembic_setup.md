@@ -7,7 +7,7 @@ Two focused deliverables:
 1. **Separate models directory** — SQLModel `table=True` classes for `order_details`, `stock_table`, `api_logs` under `src/db/models/` (not next to API DTOs).
 2. **Alembic setup** — init + configure so migrations target the same SQLite file as `DB_PATH`, then create and apply the first revision on **demo**.
 
-No wiring into `place_order` / `modify_order` yet. Keep `src/DTO/order_model.py` as HTTP-only Pydantic models.
+No wiring into `place_order` / `modify_order` yet. Keep `../DTO/order_dto_deprecated.py` as HTTP-only Pydantic models.
 
 ## Schema (committed)
 
