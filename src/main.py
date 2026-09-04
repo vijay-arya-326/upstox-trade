@@ -1,5 +1,6 @@
 import sys
 
+from DTO.order_model import OrderDTOModel
 from db.helper.db_connector import db_session
 from helper_func.brokerage import calculate_brokerage
 from helper_func.config import APPNAME, LOADED_ENV, ENV_PATH, INSTRUMENT_KEY
@@ -32,7 +33,7 @@ if __name__ == "__main__":
     }
     # calculate_brokerage(order_obj= order_obj_buy)
 
-    sample_order_obj: OrderModel = {
+    sample_order_obj: OrderDTOModel = {
         "quantity": 6500 * 10,
         "product": "D",
         "validity": "DAY",

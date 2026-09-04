@@ -8,7 +8,7 @@ from db.models.api_log import ApiLog
 from datetime import datetime
 
 def api_logger(url:str, method:str, headers:dict, api_response: Response, payload:dict):
-    print(api_response.status_code)
+    # print("From API Logger ::", api_response.status_code)
     try:
         body = json.dumps(api_response.json())
     except Exception:
