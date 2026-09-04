@@ -63,6 +63,6 @@ if __name__ == "__main__":
     # get_order_detail(order_id=112121)
 
     open_orders = GetOpenOrderList()
-    print(open_orders)
+
     for order in open_orders:
-        print(order.model_dump())
+        print(order.buy_order_id)

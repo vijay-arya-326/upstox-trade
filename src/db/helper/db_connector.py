@@ -64,7 +64,8 @@ def get_engine():
 def orm_session(engine=None):
     """SQLModel/SQLAlchemy ORM session — for use with model classes (e.g. ApiLog)."""
     engine = engine or get_engine()
-    session = Session(engine)
+    # expire_on_commit=False so returned ORM objects stay readable after the session commits/closes
+    session = Session(engine, expire_on_commit=False)
     try:
         yield session
         session.commit()
