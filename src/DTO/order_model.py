@@ -7,7 +7,7 @@ from helper_func.common_models import (ProductType, Validity, OrderType,
 
 # ---------- Main Order model ----------
 
-class OrderModel(BaseModel):
+class OrderDTOModel(BaseModel):
     quantity: int = Field(
         ...,
         gt=0,
@@ -140,7 +140,7 @@ class OrderModel(BaseModel):
         }
 
 
-class ModifyOrderModel(BaseModel):
+class ModifyOrderDTOModel(BaseModel):
     """Request body for Upstox 'Modify Order' API (PUT /v3/order/modify)."""
 
     quantity: Optional[int] = Field(
@@ -183,7 +183,7 @@ class ModifyOrderModel(BaseModel):
     )
 
 
-class OrderDetailModel(BaseModel):
+class OrderDetailDTOModel(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     exchange: str
