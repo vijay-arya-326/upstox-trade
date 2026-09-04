@@ -1,5 +1,3 @@
-from DTO.order_model import OrderModel, ModifyOrderModel
-from bootstrap.pre_load_check import check_pre_env
 import sys
 
 from db.helper.db_connector import db_session
