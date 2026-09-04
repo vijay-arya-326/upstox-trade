@@ -1,21 +1,18 @@
-import json
-import os
+from datetime import datetime
 
-from DTO.order_model import OrderModel, ModifyOrderModel, OrderDetailModel
-from db.helper.db_connector import orm_session
-from db.models import OrderDetail
-from helper_func.constants import (PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL,
-    ORDER_DETAIL_v2)
-from helper_func.config import (LOADED_ENV, UPSTOX_URL, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ACCESS_TOKEN,
-    SANDBOX_ACCESS_TOKEN, ORDER_RETRY_COUNT, prepare_headers)
 from requests import post, get, delete, put
 from requests.exceptions import HTTPError
+
+from DTO.order_model import OrderDTOModel, ModifyOrderDTOModel, OrderDetailDTOModel
+from db.helper.db_connector import orm_session
+from db.models import OrderDetail
+from helper_func.brokerage import calculate_brokerage
+from helper_func.config import (LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers)
+from helper_func.constants import (PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL,
+                                   ORDER_DETAIL_v2)
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
-from datetime import datetime
-from helper_func.brokerage import calculate_brokerage
-
 from sample.response import order_detail_sample_response
 
 runSampleOutput = False
@@ -35,7 +32,7 @@ def prepare_url(support_hf:bool= False):
 
 
 
-def place_order(order_obj: OrderModel, retry_count:int= 0,):
+def place_order(order_obj: OrderDTOModel, retry_count:int= 0,):
     try:
         final_url = prepare_url(support_hf=True) + PLACE_ORDER_URL
         headers = prepare_headers()
@@ -74,7 +71,7 @@ def place_order(order_obj: OrderModel, retry_count:int= 0,):
     finally:
         api_logger(url=final_url, headers= headers, api_response=book_order, payload=order_obj, method="POST")
 
-def modify_order(order_obj:ModifyOrderModel):
+def modify_order(order_obj:ModifyOrderDTOModel):
     try:
         headers = prepare_headers()
         final_url = prepare_url(support_hf=True) + MODIFY_ORDER_URL
@@ -137,7 +134,7 @@ def get_order_detail(order_id: int ):
             api_response.raise_for_status()
             response = api_response.json()
 
-        order_response:OrderDetailModel = OrderDetailModel.model_validate(response['data'])
+        order_response:OrderDetailDTOModel = OrderDetailDTOModel.model_validate(response['data'])
 
         order = OrderDetail(
             order_id= order_id,
