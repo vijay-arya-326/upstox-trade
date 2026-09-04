@@ -5,8 +5,9 @@ from requests.exceptions import HTTPError
 
 from DTO.order_model import OrderDTOModel, ModifyOrderDTOModel, OrderDetailDTOModel
 from db.helper.db_connector import orm_session
-from db.models import OrderDetail
+from db.models import OrderDetail, Position
 from helper_func.brokerage import calculate_brokerage
+from helper_func.common_models import TransactionType
 from helper_func.config import (LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers)
 from helper_func.constants import (PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL,
                                    ORDER_DETAIL_v2)
@@ -43,7 +44,6 @@ def place_order(order_obj: OrderDTOModel, retry_count:int= 0,):
             fancy_print( str(order_response), border_color="green", title="Order placed Successfully")
             # print_json(data=order_response, indent=2)
             order_ids = order_response['data']['order_ids']
-
             for order_id in order_ids:
                 get_order_detail(order_id=order_id)
 
@@ -165,11 +165,45 @@ def get_order_detail(order_id: int ):
         if charges_on_order["success"] == True:
             order.total_charges=charges_on_order["data"]["charges"]["total"]
 
+        if order_response.transaction_type.value == TransactionType.BUY:
+            new_position = Position(
+                trading_symbol = order_response.instrument_token,
+                buy_price=order_response.average_price,
+                buy_timestamp = order_response.order_timestamp,
+                qty_bought = order_response.filled_quantity,
+                buy_order_id = order_id,
+            )
+        else:
+            new_position = Position(
+                trading_symbol=order_response.instrument_token,
+                sell_price=order_response.average_price,
+                sell_timestamp = order_response.order_timestamp,
+                qty_sold = order_response.filled_quantity,
+                Sell_order_id = order_id,
+            )
+
+
+        # Creating position
+        # new_position:Position = Position(
+        #     "trading_symbol"="",
+        #     "buy_order_id"="",
+        #     "sell_order_id"="",
+        #     "qty_bought"=qty_bought,
+        #     "qty_sold"=qty_sold,
+        #     "buy_price"= buy_price,
+        #     "sell_price"=sell_price,
+        #     "buy_timestamp"=buy_timestamp,
+        #     "sell_timestamp"=sell_timestamp
+        # )
+
         with orm_session() as session:
             session.add(order)
+            fancy_print(msg=f"Details for order id :{order_id} updated successfully", border_color="green",
+                        title="Order Detail Updated")
+            session.add(new_position)
+            fancy_print(msg=f"Position created OR updated for :{order_id}  successfully", border_color="green",
+                        title="POSITION CREATED OR UPDATED")
             session.commit()
-
-        fancy_print(msg=f"Details for order id :{order_id} updated successfully", border_color="green", title="Order Detail Updated")
 
     except HTTPError as http_err:
         fancy_print(str(http_err), border_color="red", title="Order canceled Failed -Http Error")

@@ -2,6 +2,7 @@ import sys
 
 from DTO.order_model import OrderDTOModel
 from db.helper.db_connector import db_session
+from db.models.position import GetOpenOrderList
 from helper_func.brokerage import calculate_brokerage
 from helper_func.config import APPNAME, LOADED_ENV, ENV_PATH, INSTRUMENT_KEY
 from helper_func.download_assets import download_nse_file
@@ -33,22 +34,22 @@ if __name__ == "__main__":
     }
     # calculate_brokerage(order_obj= order_obj_buy)
 
-    sample_order_obj: OrderDTOModel = {
-        "quantity": 6500 * 10,
-        "product": "D",
-        "validity": "DAY",
-        "price": 0,
-        "tag": "entry",
-        "instrument_token": INSTRUMENT_KEY,
-        "order_type": "MARKET",
-        "transaction_type": "BUY",
-        "disclosed_quantity": 0,
-        "trigger_price": 0.0,
-        "is_amo": False,
-        "slice": True
-    }
-
-    place_order(sample_order_obj)
+    # sample_order_obj: OrderDTOModel = {
+    #     "quantity": 6500 * 10,
+    #     "product": "D",
+    #     "validity": "DAY",
+    #     "price": 0,
+    #     "tag": "entry",
+    #     "instrument_token": INSTRUMENT_KEY,
+    #     "order_type": "MARKET",
+    #     "transaction_type": "BUY",
+    #     "disclosed_quantity": 0,
+    #     "trigger_price": 0.0,
+    #     "is_amo": False,
+    #     "slice": True
+    # }
+    #
+    # place_order(sample_order_obj)
     #
     # order_obj_sell = {
     #     "instrument_token": INSTRUMENT_KEY,
@@ -60,3 +61,8 @@ if __name__ == "__main__":
     #
     # calculate_brokerage(order_obj=order_obj_sell)
     # get_order_detail(order_id=112121)
+
+    open_orders = GetOpenOrderList()
+    print(open_orders)
+    for order in open_orders:
+        print(order.model_dump())
