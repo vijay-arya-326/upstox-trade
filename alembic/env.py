@@ -8,7 +8,7 @@ from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
 # Import every table=True model so they register on SQLModel.metadata
-from db.models import ApiLog, OrderDetail, Stock  # noqa: F401
+from db.models import ApiLog, OrderDetail, Position, Stock  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

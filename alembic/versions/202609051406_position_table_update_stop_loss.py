@@ -21,7 +21,8 @@ depends_on: Union[str, Sequence[str], None] = None
 table_name = "positions"
 def upgrade() -> None:
     """Upgrade schema."""
-    op.add_column(table_name, sa.column("trigger_price", sa.Float(), nullable=False))
+    op.add_column(table_name,
+                  sa.Column("trigger_price", sa.Float(), nullable=False))
     pass
 
 

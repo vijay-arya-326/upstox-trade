@@ -8,15 +8,20 @@ from db.helper.db_connector import orm_session
 from db.models import OrderDetail, Position
 from helper_func.brokerage import calculate_brokerage
 from helper_func.common_models import TransactionType
-from helper_func.config import (LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers)
-from helper_func.constants import (PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL,
-                                   ORDER_DETAIL_v2)
+from helper_func.config import (
+    LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers, STOP_LOSS_PERCENTAGE
+)
+from helper_func.constants import (
+    PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL, ORDER_DETAIL_v2
+)
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
 from sample.response import order_detail_sample_response
 
 runSampleOutput = False
+
+placed_order_obj = None
 
 def prepare_url(support_hf:bool= False):
     global runSampleOutput
@@ -30,13 +35,16 @@ def prepare_url(support_hf:bool= False):
             url = UPSTOX_HF_API_URL
     return url
 
-
-
-
-def place_order(order_obj: OrderDTOModel):
+def place_order(market_price: float |int,  order_obj: OrderDTOModel):
+    global placed_order_obj
     try:
         final_url = prepare_url(support_hf=True) + PLACE_ORDER_URL
         headers = prepare_headers()
+
+        order_obj['trigger_price'] = market_price * (1 - STOP_LOSS_PERCENTAGE)
+
+        placed_order_obj = order_obj
+
         book_order = post(url=final_url, headers=headers, json=order_obj)
         book_order.raise_for_status()
         if book_order.status_code == 200:
@@ -45,7 +53,7 @@ def place_order(order_obj: OrderDTOModel):
             # print_json(data=order_response, indent=2)
             order_ids = order_response['data']['order_ids']
             for order_id in order_ids:
-                fancy_print(mgs="Logging - Details", bg_color="yellow", title="Processing Order Details")
+                fancy_print(msg="Logging - Details", bg_color="yellow", title="Processing Order Details")
                 get_order_detail(order_id=order_id)
             fancy_print(msg= "Order Place successfully", border_color="green", title="Order Place Successfully")
 
@@ -57,6 +65,7 @@ def place_order(order_obj: OrderDTOModel):
     except Exception as err:
         fancy_print(str(err) , border_color="red", title="Order placed Failed - Unknown Error")
         print_json(data=headers)
+        print_json(data = order_response)
         return False
     finally:
         api_logger(url=final_url, headers= headers, api_response=book_order, payload=order_obj, method="POST")
@@ -85,9 +94,6 @@ def modify_order(order_obj:ModifyOrderDTOModel):
         return False
 
 
-def close_order(order_id: int):
-    pass
-
 def cancel_order(order_id :int):
     try:
         url = prepare_url(support_hf=True)
@@ -114,6 +120,7 @@ def list_order():
     pass
 
 def get_order_detail(order_id: int ):
+    global placed_order_obj
     try:
         final_url =  prepare_url() + ORDER_DETAIL_v2 + str(order_id)
         headers = prepare_headers()
@@ -162,6 +169,7 @@ def get_order_detail(order_id: int ):
                 buy_timestamp = order_response.order_timestamp,
                 qty_bought = order_response.filled_quantity,
                 buy_order_id = order_id,
+                trigger_price = placed_order_obj['trigger_price'],
             )
         else:
             new_position = Position(
@@ -170,6 +178,7 @@ def get_order_detail(order_id: int ):
                 sell_timestamp = order_response.order_timestamp,
                 qty_sold = order_response.filled_quantity,
                 Sell_order_id = order_id,
+                trigger_price = placed_order_obj['trigger_price'],
             )
 
 

@@ -3,7 +3,6 @@ from typing import Optional
 
 from sqlmodel import Field, SQLModel, select
 
-from db.helper.db_connector import orm_session
 from helper_func.common_models import PositionStatus
 
 
@@ -27,7 +26,7 @@ class Position(SQLModel, table=True):
     buy_price: float
     sell_price: Optional[float] = None
 
-    sl_price: float = Field(index=True)
+    trigger_price: float = Field(description="SL trigger price")
 
     buy_timestamp: datetime
     sell_timestamp: Optional[datetime] = None
@@ -60,6 +59,8 @@ class Position(SQLModel, table=True):
 
 
 def GetOpenOrderList():
+    from db.helper.db_connector import orm_session
+
     query = select(Position).where(Position.status != PositionStatus.CLOSED)
     with orm_session() as session:
         items = list(session.execute(query).scalars().all())

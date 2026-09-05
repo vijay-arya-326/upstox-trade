@@ -28,6 +28,7 @@ def check_env_variables():
         "EXPIRY_DATE",
         "LOTS",
         "DB_PATH",
+        "STOP_LOSS_PERCENTAGE"
     ]
 
     optional_variables = [
@@ -48,6 +49,14 @@ def check_env_variables():
     if expiry_date and expiry_date < datetime.now().strftime("%Y-%m-%d"):
         error_flag = True
         error_messages.append(f"Expiry date \"{expiry_date}\" is in the past.")
+
+    sl_per = float(os.getenv("STOP_LOSS_PERCENTAGE"))
+
+    if sl_per > 1 or sl_per < 0:
+        error_flag = True
+        error_messages.append(f"STOP_LOSS_PERCENTAGE should be between 0 and 1.")
+
+
 
     return {"error_flag": error_flag, "error_messages": error_messages, "warning_messages": warning_messages}
 
