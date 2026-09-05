@@ -46,12 +46,11 @@ if __name__ == "__main__":
         "order_type": "SL-M",
         "transaction_type": "SELL",
         "disclosed_quantity": 0,
-        "trigger_price": market_price - 20,
         "is_amo": False,
         "slice": True
     }
 
-    place_order(order_obj=sample_order_obj)
+    place_order(market_price= market_price, order_obj=sample_order_obj)
     #
     # order_obj_sell = {
     #     "instrument_token": INSTRUMENT_KEY,
@@ -64,7 +63,7 @@ if __name__ == "__main__":
     # calculate_brokerage(order_obj=order_obj_sell)
     # get_order_detail(order_id=112121)
 
-    open_orders = GetOpenOrderList()
-
-    for order in open_orders:
-        print(order.buy_order_id)
+    # open_orders = GetOpenOrderList()
+    #
+    # for order in open_orders:
+    #     print(order.buy_order_id)
