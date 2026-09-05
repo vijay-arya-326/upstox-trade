@@ -33,7 +33,7 @@ def prepare_url(support_hf:bool= False):
 
 
 
-def place_order(order_obj: OrderDTOModel, retry_count:int= 0,):
+def place_order(order_obj: OrderDTOModel):
     try:
         final_url = prepare_url(support_hf=True) + PLACE_ORDER_URL
         headers = prepare_headers()
@@ -45,27 +45,17 @@ def place_order(order_obj: OrderDTOModel, retry_count:int= 0,):
             # print_json(data=order_response, indent=2)
             order_ids = order_response['data']['order_ids']
             for order_id in order_ids:
+                fancy_print(mgs="Logging - Details", bg_color="yellow", title="Processing Order Details")
                 get_order_detail(order_id=order_id)
-
             fancy_print(msg= "Order Place successfully", border_color="green", title="Order Place Successfully")
 
     except HTTPError as http_err:
-        if book_order.status_code == 401:
-            # TODO: attemp relogin and recall function
-            if login():
-            # try login for upstox request after login
-                if retry_count <= ORDER_RETRY_COUNT:
-                    place_order(order_obj, retry_count + 1)
-                else:
-                    fancy_print("All retry failed", border_color="red", title="Order placed Failed - Http Error")
-                    return False
-        else:
-            fancy_print(str(http_err), border_color="red", title="Order placed Failed - Unknown Error")
+            fancy_print(str(http_err), border_color="red", title="Order placed Failed - HTTP Error")
             print_json(data=order_obj, indent=2)
             print_json(data=book_order.json(), indent=2)
             return False
     except Exception as err:
-        fancy_print(str(err) , border_color="red")
+        fancy_print(str(err) , border_color="red", title="Order placed Failed - Unknown Error")
         print_json(data=headers)
         return False
     finally:

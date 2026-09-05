@@ -10,9 +10,9 @@ def fancy_print(msg, border_weight="bold", border_color="green", title="Info", b
         "title": title,
     }
 
-    if bg_color:
-        panel_kwargs["style"] = f"on {bg_color}"
-    else:
-        panel_kwargs["style"] = f"on {border_color}"
+    # if bg_color:
+    #     panel_kwargs["style"] = f"on {bg_color}"
+    # else:
+    #     panel_kwargs["style"] = f"on {border_color}"
 
     print(panel.Panel(msg, **panel_kwargs))

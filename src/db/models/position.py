@@ -27,6 +27,8 @@ class Position(SQLModel, table=True):
     buy_price: float
     sell_price: Optional[float] = None
 
+    sl_price: float = Field(index=True)
+
     buy_timestamp: datetime
     sell_timestamp: Optional[datetime] = None
 
@@ -58,11 +60,11 @@ class Position(SQLModel, table=True):
 
 
 def GetOpenOrderList():
-    query = select(Position).where(Position.status != PositionStatus.CLOSED.value)
+    query = select(Position).where(Position.status != PositionStatus.CLOSED)
     with orm_session() as session:
-        items = session.execute(query).scalars().all()
-
-    if not items:
-        return []
+        items = list(session.execute(query).scalars().all())
+        # Detach so callers can use instances after this session closes
+        for item in items:
+            session.expunge(item)
 
     return items
