@@ -32,5 +32,5 @@ def downgrade() -> None:
     """Downgrade schema."""
     op.drop_column(table_name, "qty_bought")
     op.drop_column(table_name, "qty_sold")
-    op.add_column(table_name, sa.Column("quantity", sa.Integer(), nullable=False, default=0))
+    op.add_column(table_name, sa.Column("quantity", sa.Integer()))
 
