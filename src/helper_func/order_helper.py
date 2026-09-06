@@ -8,7 +8,7 @@ from db.helper.db_connector import orm_session
 from db.models import OrderDetail, Position
 from db.models.position import select
 from helper_func.brokerage import calculate_brokerage
-from helper_func.common_models import TransactionType
+from helper_func.common_models import OrderType, TransactionType
 from helper_func.config import (
     LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers, STOP_LOSS_PERCENTAGE,
     STOP_LOSS_DIFFERENCE_BEFORE_UPDATE
@@ -20,7 +20,10 @@ from helper_func.fancy_print import fancy_print, print_json
 from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
 from sample.response import order_detail_sample_response
+from helper_func.common_models import Validity
 import traceback
+
+
 
 runSampleOutput = False
 order_price = 0
@@ -79,11 +82,16 @@ def modify_order(order_obj:ModifyOrderDTOModel):
     try:
         headers = prepare_headers()
         final_url = prepare_url(support_hf=True) + MODIFY_ORDER_URL
+        print_json(data=order_obj, indent=2)
+        ModifyOrderDTOModel.model_validate(order_obj)
+        
+        print_json(data=order_obj, indent=2)
         api_response = put(url=final_url, headers=headers, json=order_obj)
         api_response.raise_for_status()
         if api_response.status_code == 200:
             order_response = api_response.json()
             fancy_print(str(order_response), border_color="green", title="Order Modified Successfully")
+        return True
     except HTTPError as http_err:
         fancy_print(str(http_err), border_color="red", title="Order Modification Failed -HTTP Error")
         fancy_print(str(order_obj), border_color="red", title="Failure  Details")
@@ -92,7 +100,7 @@ def modify_order(order_obj:ModifyOrderDTOModel):
     except Exception as err:
         fancy_print(str(err), border_color="red", title="Order Modification Failed - Unknown Error")
         print_json(data=headers)
-        return False
+    return False
 
 
 def cancel_order(order_id :int):
@@ -237,20 +245,23 @@ def update_sl_for(order_id: int, new_market_price: float):
             if difference_in_trigger_price >= STOP_LOSS_DIFFERENCE_BEFORE_UPDATE:
                 # TODO : write function to modify order
 
-                # modify_order(order_obj={
-                #     "order_id": db_position.buy_order_id,
-                #     "trigger_price": new_trigger_price,
-                # })
-
-                #TODO : write function to update position
-                fancy_print(msg=f"Update Trigger Price {new_trigger_price}, {difference_in_trigger_price }", border_color="green", title="Update Trigger Price")
-                db_position.trigger_price = new_trigger_price
-                session.add(db_position)
-                session.commit()
+                order_modified_flag = modify_order(order_obj={
+                    "order_id": str(db_position.buy_order_id),
+                    "trigger_price": new_trigger_price,
+                    "validity": Validity.DAY.value,
+                    "order_type": OrderType.SL_M.value,
+                    "price": 0
+                })
+                if order_modified_flag:
+                    #TODO : write function to update position
+                    fancy_print(msg=f"Update Trigger Price {new_trigger_price}, {difference_in_trigger_price }", border_color="green", title="Update Trigger Price")
+                    db_position.trigger_price = new_trigger_price
+                    session.add(db_position)
+                    session.commit()
             else:
                 # fancy_print(msg=f"DO NOT Update Trigger Price , {difference_in_trigger_price }", border_color="red", title="DO NOT Update Trigger Price")
                 pass
         pass
-    
+
     except Exception as err:
         traceback.print_exc()
