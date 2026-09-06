@@ -11,6 +11,7 @@ from helper_func.manage_login import check_user_auth, validate_sandbox_token
 from helper_func.constants import SANDBOX_ENV_NAME
 from helper_func.order_helper import place_order, get_order_detail, cancel_order, modify_order, update_sl_for
 from db.helper.db_connector import db_session
+from time import sleep
 
 if __name__ == "__main__":
     fancy_print(APPNAME, border_color="green")
@@ -66,10 +67,16 @@ if __name__ == "__main__":
 
     for order in open_orders:
         # print(order)
-        update_sl_for(order=order, new_market_price=11800)
-        update_sl_for(order=order, new_market_price=12042)
-        update_sl_for(order=order, new_market_price=12040)
-        update_sl_for(order=order, new_market_price=12600)
-        update_sl_for(order=order, new_market_price=13000)
-        update_sl_for(order=order, new_market_price=12300)
-        update_sl_for(order=order, new_market_price=12200)
+        update_sl_for(order_id=order.id, new_market_price=11800)
+        sleep(5)
+        update_sl_for(order_id=order.id, new_market_price=12042)
+        sleep(5)
+        update_sl_for(order_id=order.id, new_market_price=12040)
+        sleep(5)
+        update_sl_for(order_id=order.id, new_market_price=12600)
+        sleep(5)
+        update_sl_for(order_id=order.id, new_market_price=13000)
+        sleep(5)
+        update_sl_for(order_id=order.id, new_market_price=12300)
+        sleep(5)
+        update_sl_for(order_id=order.id, new_market_price=12200)
