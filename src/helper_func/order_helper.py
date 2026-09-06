@@ -9,7 +9,8 @@ from db.models import OrderDetail, Position
 from helper_func.brokerage import calculate_brokerage
 from helper_func.common_models import TransactionType
 from helper_func.config import (
-    LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers, STOP_LOSS_PERCENTAGE
+    LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers, STOP_LOSS_PERCENTAGE,
+    STOP_LOSS_DIFFERENCE_BEFORE_UPDATE
 )
 from helper_func.constants import (
     PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL, ORDER_DETAIL_v2
@@ -20,7 +21,7 @@ from helper_func.upstox_requests import login
 from sample.response import order_detail_sample_response
 
 runSampleOutput = False
-
+order_price = 0
 placed_order_obj = None
 
 def prepare_url(support_hf:bool= False):
@@ -37,7 +38,9 @@ def prepare_url(support_hf:bool= False):
 
 def place_order(market_price: float |int,  order_obj: OrderDTOModel):
     global placed_order_obj
+    global order_price
     try:
+        order_price = market_price
         final_url = prepare_url(support_hf=True) + PLACE_ORDER_URL
         headers = prepare_headers()
 
@@ -120,7 +123,7 @@ def list_order():
     pass
 
 def get_order_detail(order_id: int ):
-    global placed_order_obj
+    global placed_order_obj, order_price
     try:
         final_url =  prepare_url() + ORDER_DETAIL_v2 + str(order_id)
         headers = prepare_headers()
@@ -165,7 +168,7 @@ def get_order_detail(order_id: int ):
         if order_response.transaction_type.value == TransactionType.BUY:
             new_position = Position(
                 trading_symbol = order_response.instrument_token,
-                buy_price=order_response.average_price,
+                buy_price=order_price, #order_response.average_price,
                 buy_timestamp = order_response.order_timestamp,
                 qty_bought = order_response.filled_quantity,
                 buy_order_id = order_id,
@@ -174,7 +177,7 @@ def get_order_detail(order_id: int ):
         else:
             new_position = Position(
                 trading_symbol=order_response.instrument_token,
-                sell_price=order_response.average_price,
+                sell_price=order_price,  #order_response.average_price,
                 sell_timestamp = order_response.order_timestamp,
                 qty_sold = order_response.filled_quantity,
                 Sell_order_id = order_id,
@@ -210,3 +213,20 @@ def get_order_detail(order_id: int ):
         fancy_print(str(err), border_color="red", title="Order Details Failed -- Unknown Error")
         print_json(data=headers)
         return False
+
+def update_sl_for(order: Position, new_market_price: float):
+    print(order.id, order.buy_price, order.trigger_price)
+    new_trigger_price  = new_market_price * (1 -STOP_LOSS_PERCENTAGE)
+    difference_in_trigger_price = round(new_trigger_price - order.trigger_price, 2)
+
+    if difference_in_trigger_price >= STOP_LOSS_DIFFERENCE_BEFORE_UPDATE:
+        # Update Stop loss
+        fancy_print(msg=f"Update Trigger Price {new_trigger_price}, {difference_in_trigger_price }", border_color="green")
+        # TODO : write funtion to modify order
+        # TODO : Write function to update SL/trigger_price in DB
+        pass
+    elif new_market_price <= order.trigger_price:
+        # TODO: CREATE A SELL ORDER
+        pass
+    else:
+        fancy_print(msg=f"DO NOT Update Trigger Price , {difference_in_trigger_price }", border_color="red")

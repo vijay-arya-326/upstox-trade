@@ -28,7 +28,8 @@ def check_env_variables():
         "EXPIRY_DATE",
         "LOTS",
         "DB_PATH",
-        "STOP_LOSS_PERCENTAGE"
+        "STOP_LOSS_PERCENTAGE",
+        "STOP_LOSS_DIFFERENCE_BEFORE_UPDATE",
     ]
 
     optional_variables = [

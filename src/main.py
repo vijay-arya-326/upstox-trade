@@ -9,7 +9,7 @@ from helper_func.download_assets import download_nse_file
 from helper_func.fancy_print import fancy_print
 from helper_func.manage_login import check_user_auth, validate_sandbox_token
 from helper_func.constants import SANDBOX_ENV_NAME
-from helper_func.order_helper import place_order, get_order_detail, cancel_order, modify_order
+from helper_func.order_helper import place_order, get_order_detail, cancel_order, modify_order, update_sl_for
 from db.helper.db_connector import db_session
 
 if __name__ == "__main__":
@@ -50,7 +50,7 @@ if __name__ == "__main__":
         "slice": True
     }
 
-    place_order(market_price= market_price, order_obj=sample_order_obj)
+    # place_order(market_price= market_price, order_obj=sample_order_obj)
     #
     # order_obj_sell = {
     #     "instrument_token": INSTRUMENT_KEY,
@@ -63,7 +63,9 @@ if __name__ == "__main__":
     # calculate_brokerage(order_obj=order_obj_sell)
     # get_order_detail(order_id=112121)
 
-    # open_orders = GetOpenOrderList()
-    #
-    # for order in open_orders:
-    #     print(order.buy_order_id)
+    open_orders = GetOpenOrderList()
+
+    for order in open_orders:
+        # print(order)
+
+        update_sl_for(order = order, new_market_price = 12042)
