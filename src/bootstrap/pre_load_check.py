@@ -51,7 +51,7 @@ def check_env_variables():
         error_flag = True
         error_messages.append(f"Expiry date \"{expiry_date}\" is in the past.")
 
-    sl_per = float(os.getenv("STOP_LOSS_PERCENTAGE"))
+    sl_per = float(os.getenv("STOP_LOSS_PERCENTAGE", 0))
 
     if sl_per > 1 or sl_per < 0:
         error_flag = True

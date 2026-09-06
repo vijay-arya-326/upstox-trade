@@ -219,7 +219,8 @@ def update_sl_for(order: Position, new_market_price: float):
     new_trigger_price  = new_market_price * (1 -STOP_LOSS_PERCENTAGE)
     difference_in_trigger_price = round(new_trigger_price - order.trigger_price, 2)
 
-    if difference_in_trigger_price >= STOP_LOSS_DIFFERENCE_BEFORE_UPDATE:
+    if ((order.trigger_price < new_trigger_price) and
+        (difference_in_trigger_price >= STOP_LOSS_DIFFERENCE_BEFORE_UPDATE)):
         # Update Stop loss
         fancy_print(msg=f"Update Trigger Price {new_trigger_price}, {difference_in_trigger_price }", border_color="green")
         # TODO : write funtion to modify order

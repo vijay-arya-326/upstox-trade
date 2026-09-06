@@ -24,7 +24,6 @@ if __name__ == "__main__":
         session.execute("Select 1;")
         fancy_print(msg="DB Connected", title="DB Connected", border_color="green")
 
-
     # order_obj_buy = {
     #     "instrument_token": INSTRUMENT_KEY,
     #     "product": "D",
@@ -67,5 +66,10 @@ if __name__ == "__main__":
 
     for order in open_orders:
         # print(order)
-
-        update_sl_for(order = order, new_market_price = 12042)
+        update_sl_for(order=order, new_market_price=11800)
+        update_sl_for(order=order, new_market_price=12042)
+        update_sl_for(order=order, new_market_price=12040)
+        update_sl_for(order=order, new_market_price=12600)
+        update_sl_for(order=order, new_market_price=13000)
+        update_sl_for(order=order, new_market_price=12300)
+        update_sl_for(order=order, new_market_price=12200)
