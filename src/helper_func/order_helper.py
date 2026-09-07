@@ -82,10 +82,9 @@ def modify_order(order_obj:ModifyOrderDTOModel):
     try:
         headers = prepare_headers()
         final_url = prepare_url(support_hf=True) + MODIFY_ORDER_URL
-        print_json(data=order_obj, indent=2)
+        # print_json(data=order_obj, indent=2)
         ModifyOrderDTOModel.model_validate(order_obj)
-        
-        print_json(data=order_obj, indent=2)
+
         api_response = put(url=final_url, headers=headers, json=order_obj)
         api_response.raise_for_status()
         if api_response.status_code == 200:
@@ -242,6 +241,7 @@ def update_sl_for(order_id: int, new_market_price: float):
             current_trigger_price = db_position.trigger_price
             new_trigger_price = round(new_market_price * (1 -STOP_LOSS_PERCENTAGE), 2)
             difference_in_trigger_price = round(new_trigger_price - current_trigger_price, 2)
+
             if difference_in_trigger_price >= STOP_LOSS_DIFFERENCE_BEFORE_UPDATE:
                 # TODO : write function to modify order
 

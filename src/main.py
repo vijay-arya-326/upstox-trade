@@ -51,7 +51,7 @@ if __name__ == "__main__":
     }
 
     # place_order(market_price= market_price, order_obj=sample_order_obj)
-    #
+
     # order_obj_sell = {
     #     "instrument_token": INSTRUMENT_KEY,
     #     "product": "D",
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     #
     # calculate_brokerage(order_obj=order_obj_sell)
     # get_order_detail(order_id=112121)
-
+    #
     open_orders = GetOpenOrderList()
 
     for order in open_orders:
