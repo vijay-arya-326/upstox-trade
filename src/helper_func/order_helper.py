@@ -11,10 +11,10 @@ from helper_func.brokerage import calculate_brokerage
 from helper_func.common_models import OrderType, TransactionType
 from helper_func.config import (
     LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers, STOP_LOSS_PERCENTAGE,
-    STOP_LOSS_DIFFERENCE_BEFORE_UPDATE
+    STOP_LOSS_DIFFERENCE_BEFORE_UPDATE, INSTRUMENT_KEY, UPSTOX_API_URL
 )
 from helper_func.constants import (
-    PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL, ORDER_DETAIL_v2
+    PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL, ORDER_DETAIL_v2, MARKET_QUOTE
 )
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.logger import api_logger
@@ -29,16 +29,16 @@ runSampleOutput = False
 order_price = 0
 placed_order_obj = None
 
-def prepare_url(support_hf:bool= False):
+def prepare_url(support_hf:bool= False, force_live_url = False):
     global runSampleOutput
-    if LOADED_ENV in SANDBOX_ENV_NAME:
+    if LOADED_ENV in SANDBOX_ENV_NAME and force_live_url == False:
         url = SANDBOX_UPSTOX_URL
         runSampleOutput = True
     else:
         if support_hf:
             url = UPSTOX_HF_API_URL
         else:
-            url = UPSTOX_HF_API_URL
+            url = UPSTOX_API_URL
     return url
 
 def place_order(market_price: float |int,  order_obj: OrderDTOModel):
@@ -265,3 +265,29 @@ def update_sl_for(order_id: int, new_market_price: float):
 
     except Exception as err:
         traceback.print_exc()
+
+def getMarketData(instrument_token: str = INSTRUMENT_KEY):
+    url = prepare_url(force_live_url=True)
+    final_url = f"{url}{MARKET_QUOTE}{instrument_token}"
+    headers = prepare_headers(live_headers= True)
+
+    try:
+        api_response = get(url=final_url, headers=headers)
+        api_response.raise_for_status()
+        if api_response.status_code == 200:
+            response = api_response.json()
+
+            data = response['data']
+            key = next(iter(data))  # 'NSE_FO:MAHABANK26SEP96PE'
+            last_price = data[key]['last_price']
+
+            print(f"Last Traded Price :: {last_price} for instrument {instrument_token} @ { datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            # fancy_print(f"{str(response)}", border_color="green", title="Market Data Successfully Retrieved")
+    except HTTPError as http_err:
+        fancy_print(str(http_err), border_color="red", title="Market Data Retrieval Failed - Http Error")
+    except Exception as err:
+        fancy_print(str(err), border_color="red", title="Market Data Retrieval Failed - Unknown Error")
+        print_json(data=headers)
+        return False
+
+

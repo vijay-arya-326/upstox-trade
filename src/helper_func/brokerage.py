@@ -6,7 +6,7 @@ import requests
 from requests.exceptions import HTTPError
 from helper_func.fancy_print import fancy_print, print_json
 from helper_func.constants import CALCULATE_BROKERAGE_URL
-from helper_func.config import UPSTOX_URL, UPSTOX_ACCESS_TOKEN, INSTRUMENT_KEY, headers_fun
+from helper_func.config import UPSTOX_API_URL, UPSTOX_ACCESS_TOKEN, INSTRUMENT_KEY, headers_fun
 from helper_func.logger import api_logger
 from helper_func.upstox_requests import login
 

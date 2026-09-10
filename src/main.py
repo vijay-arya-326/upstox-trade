@@ -9,7 +9,7 @@ from helper_func.download_assets import download_nse_file
 from helper_func.fancy_print import fancy_print
 from helper_func.manage_login import check_user_auth, validate_sandbox_token
 from helper_func.constants import SANDBOX_ENV_NAME
-from helper_func.order_helper import place_order, get_order_detail, cancel_order, modify_order, update_sl_for
+from helper_func.order_helper import place_order, get_order_detail, cancel_order, modify_order, update_sl_for, getMarketData
 from db.helper.db_connector import db_session
 from time import sleep
 
@@ -63,20 +63,25 @@ if __name__ == "__main__":
     # calculate_brokerage(order_obj=order_obj_sell)
     # get_order_detail(order_id=112121)
     #
-    open_orders = GetOpenOrderList()
+    # open_orders = GetOpenOrderList()
+    #
+    # for order in open_orders:
+    #     # print(order)
+    #     update_sl_for(order_id=order.id, new_market_price=11800)
+    #     sleep(1)
+    #     update_sl_for(order_id=order.id, new_market_price=12042)
+    #     sleep(1)
+    #     update_sl_for(order_id=order.id, new_market_price=12040)
+    #     sleep(1)
+    #     update_sl_for(order_id=order.id, new_market_price=12600)
+    #     sleep(1)
+    #     update_sl_for(order_id=order.id, new_market_price=13000)
+    #     sleep(1)
+    #     update_sl_for(order_id=order.id, new_market_price=12300)
+    #     sleep(1)
+    #     update_sl_for(order_id=order.id, new_market_price=12200)
 
-    for order in open_orders:
-        # print(order)
-        update_sl_for(order_id=order.id, new_market_price=11800)
+    flag = True
+    while flag:
+        getMarketData(instrument_token=INSTRUMENT_KEY)
         sleep(1)
-        update_sl_for(order_id=order.id, new_market_price=12042)
-        sleep(1)
-        update_sl_for(order_id=order.id, new_market_price=12040)
-        sleep(1)
-        update_sl_for(order_id=order.id, new_market_price=12600)
-        sleep(1)
-        update_sl_for(order_id=order.id, new_market_price=13000)
-        sleep(1)
-        update_sl_for(order_id=order.id, new_market_price=12300)
-        sleep(1)
-        update_sl_for(order_id=order.id, new_market_price=12200)

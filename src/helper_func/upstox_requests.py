@@ -2,7 +2,7 @@ import sys
 from warnings import catch_warnings
 
 from helper_func.config import (SANDBOX_UPSTOX_URL, LOADED_ENV,
-    UPSTOX_URL, SANDBOX_ACCESS_TOKEN, UPSTOX_ACCESS_TOKEN, ENV_PATH, UPSTOX_CLIENT_ID, UPSTOX_CLIENT_SECRET, UPSTOX_REDIRECT_URI)
+    UPSTOX_API_URL, SANDBOX_ACCESS_TOKEN, UPSTOX_ACCESS_TOKEN, ENV_PATH, UPSTOX_CLIENT_ID, UPSTOX_CLIENT_SECRET, UPSTOX_REDIRECT_URI)
 from requests import get, post
 from requests.exceptions import HTTPError
 from helper_func.constants import LOGIN_URL, AUTH_DIALOG_URL, GET_TOKEN_URL, PLACE_ORDER_URL
@@ -19,7 +19,7 @@ from pathlib import Path
 
 def sandbox_token_active(forceProd:bool = False):
     if forceProd:
-        url = UPSTOX_URL
+        url = UPSTOX_API_URL
         selected_token =  UPSTOX_ACCESS_TOKEN
         selected_env = "LIVE"
     else:
@@ -56,7 +56,7 @@ def login():
     redirect_url: str = UPSTOX_REDIRECT_URI
     env_path: Path = ENV_PATH
 
-    url = UPSTOX_URL
+    url = UPSTOX_API_URL
     get_token_url = url+GET_TOKEN_URL
     auth_url = (
         f"{url}{AUTH_DIALOG_URL}"

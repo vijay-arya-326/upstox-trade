@@ -34,7 +34,7 @@ instrument_file = assets_path.joinpath(os.getenv("INSTRUMENT_FILE"))
 instrument_pickle_file = assets_path.joinpath(os.getenv("INSTRUMENT_FILE_PICKLE"))
 
 SANDBOX_UPSTOX_URL = os.getenv("SANDBOX_UPSTOX_URL")
-UPSTOX_URL = os.getenv("UPSTOX_URL")
+UPSTOX_API_URL = os.getenv("UPSTOX_URL")
 UPSTOX_HF_API_URL = os.getenv("UPSTOX_HF_API_URL")
 
 LOADED_ENV = os.getenv("LOADED_ENV")
@@ -78,9 +78,9 @@ def headers_fun():
         "Authorization": f"Bearer {UPSTOX_ACCESS_TOKEN}",
     }
 
-def prepare_headers():
+def prepare_headers(live_headers = False):
     """Return prod or sandbox token, based on selected environment"""
-    if LOADED_ENV in SANDBOX_ENV_NAME:
+    if LOADED_ENV in SANDBOX_ENV_NAME and live_headers == False:
         token = os.environ.get('SANDBOX_ACCESS_TOKEN')
     else:
         token = os.environ.get('UPSTOX_ACCESS_TOKEN')
