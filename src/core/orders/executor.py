@@ -9,17 +9,31 @@ from core.persistence.models import OrderDetail, Position
 from sqlmodel import select
 from core.orders.brokerage import calculate_brokerage
 from core.utils.enums import OrderType, TransactionType, Validity
-from core.config.settings import (
-    LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers, STOP_LOSS_PERCENTAGE,
-    STOP_LOSS_DIFFERENCE_BEFORE_UPDATE, INSTRUMENT_KEY, UPSTOX_API_URL
-)
 from core.config.constants import (
     PLACE_ORDER_URL, SANDBOX_ENV_NAME, CANCEL_ORDER_URL, MODIFY_ORDER_URL, ORDER_DETAIL_v2
 )
 from core.logging.fancy import fancy_print, print_json
 from core.auth import login
-from sample.response import order_detail_sample_response
+from core.orders.sample_responses import order_detail_sample_response
 import traceback
+
+
+def _get_executor_settings():
+    from core.config.settings import (
+        LOADED_ENV, SANDBOX_UPSTOX_URL, UPSTOX_HF_API_URL, ORDER_RETRY_COUNT, prepare_headers, STOP_LOSS_PERCENTAGE,
+        STOP_LOSS_DIFFERENCE_BEFORE_UPDATE, INSTRUMENT_KEY, UPSTOX_API_URL
+    )
+    return {
+        "LOADED_ENV": LOADED_ENV,
+        "SANDBOX_UPSTOX_URL": SANDBOX_UPSTOX_URL,
+        "UPSTOX_HF_API_URL": UPSTOX_HF_API_URL,
+        "ORDER_RETRY_COUNT": ORDER_RETRY_COUNT,
+        "prepare_headers": prepare_headers,
+        "STOP_LOSS_PERCENTAGE": STOP_LOSS_PERCENTAGE,
+        "STOP_LOSS_DIFFERENCE_BEFORE_UPDATE": STOP_LOSS_DIFFERENCE_BEFORE_UPDATE,
+        "INSTRUMENT_KEY": INSTRUMENT_KEY,
+        "UPSTOX_API_URL": UPSTOX_API_URL,
+    }
 
 
 def _get_api_logger():
@@ -34,26 +48,28 @@ placed_order_obj = None
 
 def prepare_url(support_hf: bool = False, force_live_url=False):
     global runSampleOutput
-    if LOADED_ENV in SANDBOX_ENV_NAME and force_live_url == False:
-        url = SANDBOX_UPSTOX_URL
+    s = _get_executor_settings()
+    if s["LOADED_ENV"] in SANDBOX_ENV_NAME and force_live_url == False:
+        url = s["SANDBOX_UPSTOX_URL"]
         runSampleOutput = True
     else:
         if support_hf:
-            url = UPSTOX_HF_API_URL
+            url = s["UPSTOX_HF_API_URL"]
         else:
-            url = UPSTOX_API_URL
+            url = s["UPSTOX_API_URL"]
     return url
 
 
 def place_order(market_price: float | int, order_obj: OrderDTOModel):
     global placed_order_obj
     global order_price
+    s = _get_executor_settings()
     try:
         order_price = market_price
         final_url = prepare_url(support_hf=True) + PLACE_ORDER_URL
-        headers = prepare_headers()
+        headers = s["prepare_headers"]()
 
-        order_obj['trigger_price'] = market_price * (1 - STOP_LOSS_PERCENTAGE)
+        order_obj['trigger_price'] = market_price * (1 - s["STOP_LOSS_PERCENTAGE"])
 
         placed_order_obj = order_obj
 
@@ -83,8 +99,9 @@ def place_order(market_price: float | int, order_obj: OrderDTOModel):
 
 
 def modify_order(order_obj: ModifyOrderDTOModel):
+    s = _get_executor_settings()
     try:
-        headers = prepare_headers()
+        headers = s["prepare_headers"]()
         final_url = prepare_url(support_hf=True) + MODIFY_ORDER_URL
         ModifyOrderDTOModel.model_validate(order_obj)
 
@@ -106,10 +123,11 @@ def modify_order(order_obj: ModifyOrderDTOModel):
 
 
 def cancel_order(order_id: int):
+    s = _get_executor_settings()
     try:
         url = prepare_url(support_hf=True)
         final_url = f"{url}{CANCEL_ORDER_URL}?order_id={order_id}"
-        headers = prepare_headers()
+        headers = s["prepare_headers"]()
         api_response = delete(url=final_url, headers=headers)
         api_response.raise_for_status()
         if api_response.status_code == 200:
@@ -133,9 +151,10 @@ def list_order():
 
 def get_order_detail(order_id: int):
     global placed_order_obj, order_price
+    s = _get_executor_settings()
     try:
         final_url = prepare_url() + ORDER_DETAIL_v2 + str(order_id)
-        headers = prepare_headers()
+        headers = s["prepare_headers"]()
         api_response = get(url=final_url, headers=headers)
         if runSampleOutput == True:
             response = order_detail_sample_response
@@ -217,6 +236,7 @@ def update_sl_for(order_id: int, new_market_price: float):
         order_id: int
         new_market_price: float
     """
+    s = _get_executor_settings()
     try:
         with orm_session() as session:
             query = select(Position).where(Position.id == order_id)
@@ -229,10 +249,10 @@ def update_sl_for(order_id: int, new_market_price: float):
                 )
                 return
             current_trigger_price = db_position.trigger_price
-            new_trigger_price = round(new_market_price * (1 - STOP_LOSS_PERCENTAGE), 2)
+            new_trigger_price = round(new_market_price * (1 - s["STOP_LOSS_PERCENTAGE"]), 2)
             difference_in_trigger_price = round(new_trigger_price - current_trigger_price, 2)
 
-            if difference_in_trigger_price >= STOP_LOSS_DIFFERENCE_BEFORE_UPDATE:
+            if difference_in_trigger_price >= s["STOP_LOSS_DIFFERENCE_BEFORE_UPDATE"]:
                 order_modified_flag = modify_order(order_obj={
                     "order_id": str(db_position.buy_order_id),
                     "trigger_price": new_trigger_price,

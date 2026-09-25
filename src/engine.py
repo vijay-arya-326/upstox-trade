@@ -46,7 +46,7 @@ def _get_settings():
     }
 
 
-class  :
+class StrategyEngine:
     def __init__(self, strategy: Strategy, instrument_key: str = None):
         self.strategy = strategy
         self.instrument_key = instrument_key

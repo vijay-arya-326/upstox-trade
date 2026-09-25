@@ -4,14 +4,22 @@ from pathlib import Path
 from sqlalchemy import Engine
 from sqlmodel import create_engine, Session
 
-from core.config.settings import DB_PATH_FULL
 from core.logging.fancy import fancy_print
+
 
 _engine = None
 
 
+def _get_db_path():
+    from core.config.settings import DB_PATH_FULL
+    return DB_PATH_FULL
+
+
 def get_connection(db_path: Path | None = None) -> sqlite3.Connection:
-    path = Path(db_path) if db_path is not None else DB_PATH_FULL
+    path = Path(db_path) if db_path is not None else _get_db_path()
+
+    if path is None:
+        raise RuntimeError("DB_PATH_FULL not initialized. Call init_settings() first.")
 
     if path.exists() and path.is_dir():
         raise IsADirectoryError(
@@ -45,7 +53,7 @@ def ping_db(db_path: Path | None = None) -> bool:
     try:
         with db_session(db_path) as conn:
             conn.execute("SELECT 1")
-        fancy_print(str(db_path or DB_PATH_FULL), border_color="green", title="SQLite connected")
+        fancy_print(str(db_path or _get_db_path()), border_color="green", title="SQLite connected")
         return True
     except Exception as err:
         fancy_print(str(err), border_color="red", title="SQLite connection failed")
@@ -55,8 +63,11 @@ def ping_db(db_path: Path | None = None) -> bool:
 def get_engine():
     global _engine
     if _engine is None:
+        db_path = _get_db_path()
+        if db_path is None:
+            raise RuntimeError("DB_PATH_FULL not initialized. Call init_settings() first.")
         _engine = create_engine(
-            f"sqlite:///{DB_PATH_FULL}",
+            f"sqlite:///{db_path}",
             connect_args={"check_same_thread": False},
             echo=False,
         )

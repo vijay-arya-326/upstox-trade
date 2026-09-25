@@ -6,8 +6,17 @@ import requests
 from requests.exceptions import HTTPError
 from core.logging.fancy import fancy_print, print_json
 from core.config.constants import CALCULATE_BROKERAGE_URL
-from core.config.settings import UPSTOX_API_URL, UPSTOX_ACCESS_TOKEN, INSTRUMENT_KEY, headers_fun
 from core.auth import login
+
+
+def _get_brokerage_settings():
+    from core.config.settings import UPSTOX_API_URL, UPSTOX_ACCESS_TOKEN, INSTRUMENT_KEY, headers_fun
+    return {
+        "UPSTOX_API_URL": UPSTOX_API_URL,
+        "UPSTOX_ACCESS_TOKEN": UPSTOX_ACCESS_TOKEN,
+        "INSTRUMENT_KEY": INSTRUMENT_KEY,
+        "headers_fun": headers_fun,
+    }
 
 
 def _get_api_logger():
@@ -16,13 +25,14 @@ def _get_api_logger():
 
 
 def calculate_brokerage(order_obj):
+    s = _get_brokerage_settings()
     try:
         query_string = ""
         for key, value in order_obj.items():
             query_string += f"{key}={value}&"
 
-        final_url = f"{UPSTOX_API_URL}{CALCULATE_BROKERAGE_URL}?{query_string}"
-        headers = headers_fun()
+        final_url = f"{s['UPSTOX_API_URL']}{CALCULATE_BROKERAGE_URL}?{query_string}"
+        headers = s["headers_fun"]()
         api_response = requests.get(url=final_url, headers=headers)
         if api_response.status_code == 200:
             json_response = api_response.json()

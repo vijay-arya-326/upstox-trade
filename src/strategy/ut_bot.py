@@ -47,8 +47,9 @@ class UTBotStrategy(Strategy):
         if len(self._atr_values) < self.atr_period:
             return np.nan
         alpha = 1 / self.atr_period
-        atr_val = self._atr_values[0]
-        for v in self._atr_values[1:]:
+        atr_vals = list(self._atr_values)
+        atr_val = atr_vals[0]
+        for v in atr_vals[1:]:
             atr_val = alpha * v + (1 - alpha) * atr_val
         return atr_val
 

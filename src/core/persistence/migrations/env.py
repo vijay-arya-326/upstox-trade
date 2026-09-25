@@ -13,7 +13,7 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-src_root = Path(__file__).resolve().parents[1] / "src"
+src_root = Path(__file__).resolve().parents[3]
 env_name = os.environ.get("UPSTOX_ALEMBIC_ENV", "demo")  # demo -> sandbox.env, prod -> prod.env
 env_file = "prod.env" if env_name == "prod" else "sandbox.env"
 load_dotenv(src_root / "env" / env_file, override=True)

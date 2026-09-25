@@ -3,15 +3,25 @@ from requests import get
 from requests.exceptions import HTTPError
 
 from core.orders.executor import prepare_url
-from core.config.settings import prepare_headers, INSTRUMENT_KEY
 from core.config.constants import MARKET_QUOTE
 from core.logging.fancy import fancy_print, print_json
 
 
-def getMarketData(instrument_token: str = INSTRUMENT_KEY):
+def _get_quotes_settings():
+    from core.config.settings import prepare_headers, INSTRUMENT_KEY
+    return {
+        "prepare_headers": prepare_headers,
+        "INSTRUMENT_KEY": INSTRUMENT_KEY,
+    }
+
+
+def getMarketData(instrument_token: str = None):
+    s = _get_quotes_settings()
+    if instrument_token is None:
+        instrument_token = s["INSTRUMENT_KEY"]
     url = prepare_url(force_live_url=True)
     final_url = f"{url}{MARKET_QUOTE}{instrument_token}"
-    headers = prepare_headers(live_headers=True)
+    headers = s["prepare_headers"](live_headers=True)
 
     try:
         api_response = get(url=final_url, headers=headers)

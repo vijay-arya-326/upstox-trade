@@ -74,18 +74,20 @@ class CompositeStrategy(Strategy):
 
     def _combine_trails(self, ltp: float, position) -> TrailResult:
         results = [s.on_tick(ltp, position) for s in self.strategies]
-        valid = [r for r in results if r.new_sl is not None]
-        if not valid:
+        trail_results = [r for r in results if isinstance(r, TrailResult)]
+        exit_signals = [r for r in trail_results if r.exit_signal]
+        valid = [r for r in trail_results if r.new_sl is not None]
+        if not valid and not exit_signals:
             return TrailResult(new_sl=None, exit_signal=False)
         
         is_long = getattr(position, 'qty_bought', 0) > 0
         if is_long:
-            tightest = min(r.new_sl for r in valid)
-            exit_any = any(r.exit_signal for r in valid)
+            tightest = min((r.new_sl for r in valid), default=None)
+            exit_any = any(r.exit_signal for r in trail_results)
             return TrailResult(new_sl=tightest, exit_signal=exit_any)
         else:
-            loosest = max(r.new_sl for r in valid)
-            exit_any = any(r.exit_signal for r in valid)
+            loosest = max((r.new_sl for r in valid), default=None)
+            exit_any = any(r.exit_signal for r in trail_results)
             return TrailResult(new_sl=loosest, exit_signal=exit_any)
 
     def _merge_signals(self, signals) -> Signal:

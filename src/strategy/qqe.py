@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from collections import deque
 from typing import Optional
 from strategy.base import Strategy, Signal, TrailResult
@@ -30,8 +29,26 @@ class QQEStrategy(Strategy):
         
         self._closes = deque(maxlen=history_length)
         
-        self._fast_rsi_ma = None
-        self._slow_rsi_ma = None
+        # RSI EMA state (incremental)
+        self._rsi_ema_fast = None
+        self._rsi_ema_slow = None
+        
+        # RSI MA EMA state
+        self._rsi_ma_ema_fast = None
+        self._rsi_ma_ema_slow = None
+        
+        # ATR of RSI EMA state
+        self._atr_rsi_ema_fast = None
+        self._atr_rsi_ema_slow = None
+        
+        # MA of ATR RSI EMA state
+        self._ma_atr_rsi_ema_fast = None
+        self._ma_atr_rsi_ema_slow = None
+        
+        # DAR EMA state
+        self._dar_ema_fast = None
+        self._dar_ema_slow = None
+        
         self._fast_line = 0.0
         self._slow_line = 0.0
         self._fast_hist = 0.0
@@ -41,26 +58,19 @@ class QQEStrategy(Strategy):
         self._prev_upper = 0.0
         self._prev_lower = 0.0
         
-        self._rsi_up = deque(maxlen=rsi_len)
-        self._rsi_down = deque(maxlen=rsi_len)
-        self._rsi_ma_fast = deque(maxlen=smooth_len)
-        self._atr_rsi_fast = deque(maxlen=rsi_len * 2 - 1)
-        self._ma_atr_rsi_fast = deque(maxlen=rsi_len * 2 - 1)
-        self._dar_fast = deque(maxlen=rsi_len * 2 - 1)
-        
-        self._rsi_up2 = deque(maxlen=rsi_len2)
-        self._rsi_down2 = deque(maxlen=rsi_len2)
-        self._rsi_ma_slow = deque(maxlen=smooth_len2)
-        self._atr_rsi_slow = deque(maxlen=rsi_len2 * 2 - 1)
-        self._ma_atr_rsi_slow = deque(maxlen=rsi_len2 * 2 - 1)
-        self._dar_slow = deque(maxlen=rsi_len2 * 2 - 1)
-        
         self._longband_fast = 0.0
         self._shortband_fast = 0.0
         self._trend_fast = 0
         self._longband_slow = 0.0
         self._shortband_slow = 0.0
         self._trend_slow = 0
+        
+        # Warmup counters
+        self._rsi_count = 0
+        self._rsi_ma_count = 0
+        self._atr_rsi_count = 0
+        self._ma_atr_rsi_count = 0
+        self._dar_count = 0
 
     def _update_rsi(self, close: float):
         if len(self._closes) < 2:
@@ -69,124 +79,147 @@ class QQEStrategy(Strategy):
         up = max(delta, 0)
         down = max(-delta, 0)
         
-        self._rsi_up.append(up)
-        self._rsi_down.append(down)
-        self._rsi_up2.append(up)
-        self._rsi_down2.append(down)
+        # Update RSI EMA incrementally
+        alpha_rsi = 1 / self.rsi_len
+        if self._rsi_ema_fast is None:
+            self._rsi_ema_fast = up / (up + down) * 100 if (up + down) > 0 else 50
+        else:
+            rs = up / down if down > 0 else 1e10
+            rsi = 100 - (100 / (1 + rs))
+            self._rsi_ema_fast = alpha_rsi * rsi + (1 - alpha_rsi) * self._rsi_ema_fast
         
-        if len(self._rsi_up) >= self.rsi_len:
-            alpha = 1 / self.rsi_len
-            roll_up = self._rsi_up[0]
-            for v in self._rsi_up[1:]:
-                roll_up = alpha * v + (1 - alpha) * roll_up
-            roll_down = self._rsi_down[0]
-            for v in self._rsi_down[1:]:
-                roll_down = alpha * v + (1 - alpha) * roll_down
-            rs = roll_up / roll_down if roll_down != 0 else np.nan
-            rsi = 100 - (100 / (1 + rs)) if not np.isnan(rs) else 50
-            self._rsi_ma_fast.append(rsi)
+        alpha_rsi2 = 1 / self.rsi_len2
+        if self._rsi_ema_slow is None:
+            self._rsi_ema_slow = up / (up + down) * 100 if (up + down) > 0 else 50
+        else:
+            rs = up / down if down > 0 else 1e10
+            rsi = 100 - (100 / (1 + rs))
+            self._rsi_ema_slow = alpha_rsi2 * rsi + (1 - alpha_rsi2) * self._rsi_ema_slow
         
-        if len(self._rsi_up2) >= self.rsi_len2:
-            alpha = 1 / self.rsi_len2
-            roll_up = self._rsi_up2[0]
-            for v in self._rsi_up2[1:]:
-                roll_up = alpha * v + (1 - alpha) * roll_up
-            roll_down = self._rsi_down2[0]
-            for v in self._rsi_down2[1:]:
-                roll_down = alpha * v + (1 - alpha) * roll_down
-            rs = roll_up / roll_down if roll_down != 0 else np.nan
-            rsi = 100 - (100 / (1 + rs)) if not np.isnan(rs) else 50
-            self._rsi_ma_slow.append(rsi)
-
-    def _update_qqe_fast(self):
-        if len(self._rsi_ma_fast) < 2:
-            return
-        rsi_ma = list(self._rsi_ma_fast)
-        atr_rsi = abs(rsi_ma[-1] - rsi_ma[-2])
-        self._atr_rsi_fast.append(atr_rsi)
+        self._rsi_count += 1
         
-        if len(self._atr_rsi_fast) >= self.rsi_len * 2 - 1:
-            alpha = 1 / (self.rsi_len * 2 - 1)
-            ma_atr = self._atr_rsi_fast[0]
-            for v in self._atr_rsi_fast[1:]:
-                ma_atr = alpha * v + (1 - alpha) * ma_atr
-            self._ma_atr_rsi_fast.append(ma_atr)
+        # Update RSI MA EMA
+        if self._rsi_count >= self.rsi_len:
+            alpha_ma = 1 / self.smooth_len
+            if self._rsi_ma_ema_fast is None:
+                self._rsi_ma_ema_fast = self._rsi_ema_fast
+            else:
+                self._rsi_ma_ema_fast = alpha_ma * self._rsi_ema_fast + (1 - alpha_ma) * self._rsi_ma_ema_fast
             
-            if len(self._ma_atr_rsi_fast) >= self.rsi_len * 2 - 1:
-                dar_ma = self._ma_atr_rsi_fast[0]
-                for v in self._ma_atr_rsi_fast[1:]:
-                    dar_ma = alpha * v + (1 - alpha) * dar_ma
-                dar = dar_ma * self.factor
-                self._dar_fast.append(dar)
-                
-                new_long = rsi_ma[-1] - dar
-                new_short = rsi_ma[-1] + dar
-                
-                if rsi_ma[-2] > self._longband_fast and rsi_ma[-1] > self._longband_fast:
-                    self._longband_fast = max(self._longband_fast, new_long)
-                else:
-                    self._longband_fast = new_long
-                
-                if rsi_ma[-2] < self._shortband_fast and rsi_ma[-1] < self._shortband_fast:
-                    self._shortband_fast = min(self._shortband_fast, new_short)
-                else:
-                    self._shortband_fast = new_short
-                
-                if rsi_ma[-1] > self._shortband_fast:
-                    self._trend_fast = 1
-                elif rsi_ma[-1] < self._longband_fast:
-                    self._trend_fast = -1
-                
-                self._fast_line = self._longband_fast if self._trend_fast == 1 else self._shortband_fast
-
-    def _update_qqe_slow(self):
-        if len(self._rsi_ma_slow) < 2:
-            return
-        rsi_ma = list(self._rsi_ma_slow)
-        atr_rsi = abs(rsi_ma[-1] - rsi_ma[-2])
-        self._atr_rsi_slow.append(atr_rsi)
-        
-        if len(self._atr_rsi_slow) >= self.rsi_len2 * 2 - 1:
-            alpha = 1 / (self.rsi_len2 * 2 - 1)
-            ma_atr = self._atr_rsi_slow[0]
-            for v in self._atr_rsi_slow[1:]:
-                ma_atr = alpha * v + (1 - alpha) * ma_atr
-            self._ma_atr_rsi_slow.append(ma_atr)
+            alpha_ma2 = 1 / self.smooth_len2
+            if self._rsi_ma_ema_slow is None:
+                self._rsi_ma_ema_slow = self._rsi_ema_slow
+            else:
+                self._rsi_ma_ema_slow = alpha_ma2 * self._rsi_ema_slow + (1 - alpha_ma2) * self._rsi_ma_ema_slow
             
-            if len(self._ma_atr_rsi_slow) >= self.rsi_len2 * 2 - 1:
-                dar_ma = self._ma_atr_rsi_slow[0]
-                for v in self._ma_atr_rsi_slow[1:]:
-                    dar_ma = alpha * v + (1 - alpha) * dar_ma
-                dar = dar_ma * self.factor2
-                self._dar_slow.append(dar)
-                
-                new_long = rsi_ma[-1] - dar
-                new_short = rsi_ma[-1] + dar
-                
-                if rsi_ma[-2] > self._longband_slow and rsi_ma[-1] > self._longband_slow:
-                    self._longband_slow = max(self._longband_slow, new_long)
+            self._rsi_ma_count += 1
+
+        # Update ATR of RSI
+        if self._rsi_ma_ema_fast is not None and self._rsi_ma_ema_fast_prev is not None:
+            atr_rsi = abs(self._rsi_ma_ema_fast - self._rsi_ma_ema_fast_prev)
+            alpha_atr = 1 / (self.rsi_len * 2 - 1)
+            if self._atr_rsi_ema_fast is None:
+                self._atr_rsi_ema_fast = atr_rsi
+            else:
+                self._atr_rsi_ema_fast = alpha_atr * atr_rsi + (1 - alpha_atr) * self._atr_rsi_ema_fast
+            
+            if self._atr_rsi_ema_fast is not None:
+                alpha_ma_atr = 1 / (self.rsi_len * 2 - 1)
+                if self._ma_atr_rsi_ema_fast is None:
+                    self._ma_atr_rsi_ema_fast = self._atr_rsi_ema_fast
                 else:
-                    self._longband_slow = new_long
+                    self._ma_atr_rsi_ema_fast = alpha_ma_atr * self._atr_rsi_ema_fast + (1 - alpha_ma_atr) * self._ma_atr_rsi_ema_fast
                 
-                if rsi_ma[-2] < self._shortband_slow and rsi_ma[-1] < self._shortband_slow:
-                    self._shortband_slow = min(self._shortband_slow, new_short)
+                if self._ma_atr_rsi_ema_fast is not None:
+                    if self._dar_ema_fast is None:
+                        self._dar_ema_fast = self._ma_atr_rsi_ema_fast
+                    else:
+                        self._dar_ema_fast = alpha_ma_atr * self._ma_atr_rsi_ema_fast + (1 - alpha_ma_atr) * self._dar_ema_fast
+                    
+                    dar = self._dar_ema_fast * self.factor
+                    self._update_bands_fast(dar)
+        
+        if self._rsi_ma_ema_slow is not None and self._rsi_ma_ema_slow_prev is not None:
+            atr_rsi = abs(self._rsi_ma_ema_slow - self._rsi_ma_ema_slow_prev)
+            alpha_atr = 1 / (self.rsi_len2 * 2 - 1)
+            if self._atr_rsi_ema_slow is None:
+                self._atr_rsi_ema_slow = atr_rsi
+            else:
+                self._atr_rsi_ema_slow = alpha_atr * atr_rsi + (1 - alpha_atr) * self._atr_rsi_ema_slow
+            
+            if self._atr_rsi_ema_slow is not None:
+                alpha_ma_atr = 1 / (self.rsi_len2 * 2 - 1)
+                if self._ma_atr_rsi_ema_slow is None:
+                    self._ma_atr_rsi_ema_slow = self._atr_rsi_ema_slow
                 else:
-                    self._shortband_slow = new_short
+                    self._ma_atr_rsi_ema_slow = alpha_ma_atr * self._atr_rsi_ema_slow + (1 - alpha_ma_atr) * self._ma_atr_rsi_ema_slow
                 
-                if rsi_ma[-1] > self._shortband_slow:
-                    self._trend_slow = 1
-                elif rsi_ma[-1] < self._longband_slow:
-                    self._trend_slow = -1
-                
-                self._slow_line = self._longband_slow if self._trend_slow == 1 else self._shortband_slow
+                if self._ma_atr_rsi_ema_slow is not None:
+                    if self._dar_ema_slow is None:
+                        self._dar_ema_slow = self._ma_atr_rsi_ema_slow
+                    else:
+                        self._dar_ema_slow = alpha_ma_atr * self._ma_atr_rsi_ema_slow + (1 - alpha_ma_atr) * self._dar_ema_slow
+                    
+                    dar = self._dar_ema_slow * self.factor2
+                    self._update_bands_slow(dar)
+        
+        # Store previous values
+        self._rsi_ma_ema_fast_prev = self._rsi_ma_ema_fast
+        self._rsi_ma_ema_slow_prev = self._rsi_ma_ema_slow
+
+    def _update_bands_fast(self, dar: float):
+        if self._rsi_ma_ema_fast is None:
+            return
+        
+        new_long = self._rsi_ma_ema_fast - dar
+        new_short = self._rsi_ma_ema_fast + dar
+        
+        if self._rsi_ma_ema_fast > self._longband_fast and self._rsi_ma_ema_fast > self._longband_fast:
+            self._longband_fast = max(self._longband_fast, new_long)
+        else:
+            self._longband_fast = new_long
+        
+        if self._rsi_ma_ema_fast < self._shortband_fast and self._rsi_ma_ema_fast < self._shortband_fast:
+            self._shortband_fast = min(self._shortband_fast, new_short)
+        else:
+            self._shortband_fast = new_short
+        
+        if self._rsi_ma_ema_fast > self._shortband_fast:
+            self._trend_fast = 1
+        elif self._rsi_ma_ema_fast < self._longband_fast:
+            self._trend_fast = -1
+        
+        self._fast_line = self._longband_fast if self._trend_fast == 1 else self._shortband_fast
+
+    def _update_bands_slow(self, dar: float):
+        if self._rsi_ma_ema_slow is None:
+            return
+        
+        new_long = self._rsi_ma_ema_slow - dar
+        new_short = self._rsi_ma_ema_slow + dar
+        
+        if self._rsi_ma_ema_slow > self._longband_slow and self._rsi_ma_ema_slow > self._longband_slow:
+            self._longband_slow = max(self._longband_slow, new_long)
+        else:
+            self._longband_slow = new_long
+        
+        if self._rsi_ma_ema_slow < self._shortband_slow and self._rsi_ma_ema_slow < self._shortband_slow:
+            self._shortband_slow = min(self._shortband_slow, new_short)
+        else:
+            self._shortband_slow = new_short
+        
+        if self._rsi_ma_ema_slow > self._shortband_slow:
+            self._trend_slow = 1
+        elif self._rsi_ma_ema_slow < self._longband_slow:
+            self._trend_slow = -1
+        
+        self._slow_line = self._longband_slow if self._trend_slow == 1 else self._shortband_slow
 
     def on_tick(self, ltp: float, position: Position | None) -> Signal | TrailResult:
         self._closes.append(ltp)
         self._update_rsi(ltp)
-        self._update_qqe_fast()
-        self._update_qqe_slow()
         
-        if len(self._closes) < max(self.rsi_len + self.smooth_len, self.rsi_len2 + self.smooth_len2) + 10:
+        if self._rsi_ma_ema_fast is None or self._rsi_ma_ema_slow is None:
             return Signal(action=None, entry_price=None, initial_sl=None, metadata={})
         
         self._prev_fast_hist = self._fast_hist
