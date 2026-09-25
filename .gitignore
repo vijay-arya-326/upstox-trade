@@ -2,7 +2,7 @@
 .jbeval/
 .venv/
 **/*.env
-NSE.json
-NSE.pkl
+src/assets/NSE.json
+src/assets/NSE.pkl
 __pycache__/
 .DS_Store
