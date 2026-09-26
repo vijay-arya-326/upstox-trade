@@ -6,3 +6,5 @@ src/assets/NSE.json
 src/assets/NSE.pkl
 __pycache__/
 .DS_Store
+**/node_modules
+**/dist
