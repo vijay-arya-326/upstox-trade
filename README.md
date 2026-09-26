@@ -91,12 +91,15 @@ Mandatory keys checked at load time (`src/bootstrap/pre_load_check.py`):
 
 `src/env/.env.example` is a starting template; add any keys listed above that are not in the example.
 
+Local SQLite (`DB_PATH`, connection helpers, insert/update) is documented in [`db_readme.md`](db_readme.md).
+
 ## Project layout
 
 ```
 upstox-trade/
 ├── pyproject.toml          # Project metadata and uv dependencies
 ├── uv.lock                 # Locked dependency versions
+├── db_readme.md            # Local SQLite usage
 ├── src/
 │   ├── main.py             # Entry point
 │   ├── bootstrap/          # Startup env validation
@@ -113,6 +116,7 @@ upstox-trade/
 | [`pyproject.toml`](pyproject.toml) | Package name, Python `>=3.12`, dependencies: `dotenv`, `pydantic`, `requests`, `rich`. |
 | [`uv.lock`](uv.lock) | Exact versions installed by `uv sync`. |
 | [`.gitignore`](.gitignore) | Ignores `.venv`, `**/*.env`, and generated `NSE.json` / `NSE.pkl`. |
+| [`db_readme.md`](db_readme.md) | Local SQLite path, connection helpers, and insert/update usage. |
 
 ### Entry and bootstrap
 
@@ -141,7 +145,7 @@ upstox-trade/
 
 | File | Function |
 | --- | --- |
-| [`src/DTO/order_model.py`](src/DTO/order_model.py) | Pydantic models: `OrderModel` (place) and `ModifyOrderModel` (modify), with enums and price/trigger/market-protection rules. |
+| [`src/DTO/order_dto_deprecated.py`](src/DTO/order_dto_deprecated.py) | Pydantic models: `OrderModel` (place) and `ModifyOrderModel` (modify), with enums and price/trigger/market-protection rules. |
 | [`src/helper_func/order_helper.py`](src/helper_func/order_helper.py) | HTTP helpers: `place_order`, `modify_order`, `cancel_order`; picks sandbox vs HFT URL and bearer token from `LOADED_ENV`; retries login on 401. |
 
 ### Env and assets

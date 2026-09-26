@@ -1,0 +1,218 @@
+import re
+from typing import Optional
+from datetime import datetime
+from pydantic import BaseModel, Field, field_validator, ConfigDict, model_validator
+from core.utils.enums import (ProductType, Validity, OrderType,
+                              TransactionType, Product, OrderStatus, Variety)
+
+
+class OrderDTOModel(BaseModel):
+    quantity: int = Field(
+        ...,
+        gt=0,
+        description=(
+            "Quantity with which the order is to be placed. "
+            "For commodity - number of lots. "
+            "For other F&O and equities - number of units, in multiples of tick size."
+        ),
+    )
+    product: ProductType = Field(
+        ..., description="Signifies if the order is Intraday, Delivery, or MTF."
+    )
+    validity: Validity = Field(
+        default=Validity.DAY, description="Order validity: DAY (default) or IOC."
+    )
+    price: float | int = Field(
+        ..., ge=0, description="Price at which the order will be placed."
+    )
+    tag: Optional[str] = Field(
+        default=None, max_length=20, description="Tag for a particular order."
+    )
+    instrument_token: str = Field(
+        ..., description="Key of the instrument."
+    )
+    order_type: OrderType = Field(
+        ..., description="Type of order: MARKET, LIMIT, SL, or SL-M."
+    )
+    transaction_type: TransactionType = Field(
+        ..., description="Indicates whether it's a BUY or SELL order."
+    )
+    disclosed_quantity: int = Field(
+        ..., ge=0, description="Quantity to be disclosed in the market depth."
+    )
+    trigger_price: float = Field(
+        ..., ge=0, description="Trigger price to be set for stop loss orders."
+    )
+    is_amo: Optional[bool] = Field(
+        default=False, description="Signifies if the order is an After Market Order."
+    )
+    slice: Optional[bool] = Field(
+        default=False,
+        description=(
+            "When true, the order is auto-sliced into smaller parts based on the "
+            "exchange freeze quantity for the instrument."
+        ),
+    )
+    market_protection: Optional[int] = Field(
+        default=-1,
+        ge=-1,
+        le=25,
+        description=(
+            "-1 = automatic market protection. 1-25 = custom protection percentage. "
+            "0 = no market protection. Applicable only for MARKET / SL-M orders."
+        ),
+    )
+
+    @field_validator("instrument_token")
+    @classmethod
+    def validate_instrument_token(cls, v: str) -> str:
+        pattern = r"^[A-Za-z]+_[A-Za-z]+\|[A-Za-z0-9]+$"
+        if not re.match(pattern, v):
+            raise ValueError(
+                "instrument_token must match the expected pattern, e.g. "
+                "'NSE_EQ|INE848E01016'"
+            )
+        return v
+
+    @model_validator(mode="after")
+    def validate_price_and_trigger(self) -> "OrderDTOModel":
+        if self.order_type in (OrderType.MARKET, OrderType.SL_M) and self.price != 0:
+            raise ValueError(
+                f"price must be 0 for order_type '{self.order_type.value}'"
+            )
+
+        if self.order_type in (OrderType.LIMIT, OrderType.SL) and self.price <= 0:
+            raise ValueError(
+                f"price must be greater than 0 for order_type '{self.order_type.value}'"
+            )
+
+        if self.order_type in (OrderType.SL, OrderType.SL_M) and self.trigger_price <= 0:
+            raise ValueError(
+                f"trigger_price must be greater than 0 for order_type '{self.order_type.value}'"
+            )
+
+        if self.order_type in (OrderType.MARKET, OrderType.LIMIT) and self.trigger_price != 0:
+            raise ValueError(
+                f"trigger_price must be 0 for order_type '{self.order_type.value}'"
+            )
+
+        return self
+
+    @model_validator(mode="after")
+    def validate_market_protection(self) -> "OrderDTOModel":
+        if (
+                self.order_type not in (OrderType.MARKET, OrderType.SL_M)
+                and self.market_protection not in (None, -1)
+        ):
+            raise ValueError(
+                "market_protection is only applicable for MARKET or SL-M orders"
+            )
+        return self
+
+    class Config:
+        use_enum_values = True
+        json_schema_extra = {
+            "example": {
+                "quantity": 1,
+                "product": "D",
+                "validity": "DAY",
+                "price": 0,
+                "tag": "my-order-1",
+                "instrument_token": "NSE_EQ|INE848E01016",
+                "order_type": "MARKET",
+                "transaction_type": "BUY",
+                "disclosed_quantity": 0,
+                "trigger_price": 0,
+                "is_amo": False,
+                "slice": False,
+                "market_protection": -1,
+            }
+        }
+
+
+class ModifyOrderDTOModel(BaseModel):
+    """Request body for Upstox 'Modify Order' API (PUT /v3/order/modify)."""
+
+    quantity: Optional[int] = Field(
+        default=None,
+        description="Quantity with which the order was placed",
+    )
+    validity: Validity = Field(
+        ...,
+        description="Order validity. DAY or IOC.",
+    )
+    price: float = Field(
+        ...,
+        description="Price at which the order was placed",
+    )
+    order_id: str = Field(
+        ...,
+        description="The order ID for which the order must be modified",
+    )
+    order_type: OrderType = Field(
+        ...,
+        description="Type of order: MARKET, LIMIT, SL, or SL-M",
+    )
+    disclosed_quantity: Optional[int] = Field(
+        default=None,
+        description="Volume to be displayed in market depth. If provided, must be non-zero.",
+    )
+    trigger_price: float = Field(
+        ...,
+        description="Trigger price for stop loss orders",
+    )
+    market_protection: Optional[int] = Field(
+        default=-1,
+        ge=-1,
+        le=25,
+        description=(
+            "Applicable for MARKET and SL-M orders (ignored for LIMIT/SL). "
+            "-1 = automatic protection (default), 1-25 = custom protection %, "
+            "0 = no protection (order rejected by exchange for MARKET orders via API)."
+        ),
+    )
+
+
+class OrderDetailDTOModel(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    exchange: str
+    product: Product
+    price: float = Field(ge=0)
+    quantity: int = Field(gt=0)
+    status: OrderStatus
+    tag: Optional[str] = None
+
+    instrument_token: str
+    placed_by: str
+
+    trading_symbol: str
+    tradingsymbol: str
+
+    order_type: OrderType
+    validity: Validity
+
+    trigger_price: float = Field(ge=0)
+    disclosed_quantity: int = Field(ge=0)
+
+    transaction_type: TransactionType
+
+    average_price: float = Field(ge=0)
+    filled_quantity: int = Field(ge=0)
+    pending_quantity: int = Field(ge=0)
+
+    status_message: Optional[str] = None
+    status_message_raw: Optional[str] = None
+
+    exchange_order_id: Optional[str] = None
+    parent_order_id: Optional[str] = None
+    order_id: str
+
+    variety: Variety
+
+    order_timestamp: datetime
+    exchange_timestamp: datetime
+
+    is_amo: bool
+    order_request_id: Optional[str] = None
+    order_ref_id: Optional[str] = None
